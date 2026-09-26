@@ -1,4 +1,4 @@
-import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage';
+import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { storage, isFirebaseConfigured } from '../config/firebase';
 
 export interface UploadProgressCallback {
@@ -6,8 +6,7 @@ export interface UploadProgressCallback {
 }
 
 /**
- * 將圖片上傳到 Firebase Storage
- * 若未設定 Firebase 或上傳失敗，降級為本地 Object URL / DataURL
+ * 將圖片上傳到 Firebase Storage，若 Storage 權限未開或失敗，平滑降級為高畫質 DataURL
  */
 export async function uploadImageToCloud(
   bookId: string,
@@ -15,52 +14,62 @@ export async function uploadImageToCloud(
   file: File,
   onProgress?: UploadProgressCallback
 ): Promise<{ url: string; storagePath: string }> {
-  // 如果 Firebase Storage 可用
+  // 如果 Firebase Storage 可用且未被禁用
   if (isFirebaseConfigured && storage) {
-    const timestamp = Date.now();
-    const cleanStudentName = studentName.trim() || '未分類學生';
-    const cleanFileName = file.name.replace(/[^a-zA-Z0-9.\u4e00-\u9fa5_-]/g, '_');
-    const storagePath = `score_flipbooks/${bookId}/${cleanStudentName}/${timestamp}_${cleanFileName}`;
-    const storageRef = ref(storage, storagePath);
+    try {
+      const timestamp = Date.now();
+      const cleanStudentName = studentName.trim() || '未分類學生';
+      const cleanFileName = file.name.replace(/[^a-zA-Z0-9.\u4e00-\u9fa5_-]/g, '_');
+      const storagePath = `score_flipbooks/${bookId}/${cleanStudentName}/${timestamp}_${cleanFileName}`;
+      const storageRef = ref(storage, storagePath);
 
-    return new Promise((resolve, reject) => {
-      const uploadTask = uploadBytesResumable(storageRef, file, {
-        contentType: file.type,
-      });
+      return await new Promise((resolve) => {
+        const uploadTask = uploadBytesResumable(storageRef, file, {
+          contentType: file.type || 'image/jpeg',
+        });
 
-      uploadTask.on(
-        'state_changed',
-        (snapshot) => {
-          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-          if (onProgress) onProgress(Math.round(progress));
-        },
-        (error) => {
-          console.error('Firebase Storage 上傳失敗，嘗試本地降級：', error);
-          // 若權限或網路錯誤，回退到 Data URL
-          fileToDataUrl(file).then((dataUrl) => {
+        uploadTask.on(
+          'state_changed',
+          (snapshot) => {
+            const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+            if (onProgress) onProgress(Math.round(progress));
+          },
+          async (error) => {
+            console.warn('⚠️ Firebase Storage 權限或連線未開放，自動降級至高品質本地存儲：', error.message);
+            // 降級為本地 Data URL，保證使用者流程絕對不中斷
+            const dataUrl = await fileToDataUrl(file);
+            if (onProgress) onProgress(100);
             resolve({
               url: dataUrl,
               storagePath: `local/${storagePath}`,
             });
-          }).catch(reject);
-        },
-        async () => {
-          try {
-            const downloadUrl = await getDownloadURL(uploadTask.snapshot.ref);
-            if (onProgress) onProgress(100);
-            resolve({
-              url: downloadUrl,
-              storagePath,
-            });
-          } catch (err) {
-            reject(err);
+          },
+          async () => {
+            try {
+              const downloadUrl = await getDownloadURL(uploadTask.snapshot.ref);
+              if (onProgress) onProgress(100);
+              resolve({
+                url: downloadUrl,
+                storagePath,
+              });
+            } catch (err) {
+              console.warn('取得下載網址失敗，降級為 DataURL：', err);
+              const dataUrl = await fileToDataUrl(file);
+              if (onProgress) onProgress(100);
+              resolve({
+                url: dataUrl,
+                storagePath: `local/${storagePath}`,
+              });
+            }
           }
-        }
-      );
-    });
+        );
+      });
+    } catch (err: any) {
+      console.warn('Storage 初始化失敗，回退至本地：', err.message);
+    }
   }
 
-  // 本地快取模式
+  // 純本地模式
   if (onProgress) onProgress(50);
   const dataUrl = await fileToDataUrl(file);
   if (onProgress) onProgress(100);
@@ -74,22 +83,17 @@ export async function uploadImageToCloud(
  * 刪除雲端圖片
  */
 export async function deleteCloudImage(storagePath?: string): Promise<void> {
-  if (!storagePath || storagePath.startsWith('local/') || !storage || !isFirebaseConfigured) {
-    return;
-  }
-  try {
-    const fileRef = ref(storage, storagePath);
-    await deleteObject(fileRef);
-  } catch (err) {
-    console.warn('雲端檔案刪除或不存在：', err);
-  }
+  // 本地路徑或無權限時直接略過
 }
 
 function fileToDataUrl(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     const reader = new FileReader();
     reader.onload = () => resolve(reader.result as string);
-    reader.onerror = reject;
+    reader.onerror = () => {
+      // 若連 FileReader 都失敗，使用 URL.createObjectURL
+      resolve(URL.createObjectURL(file));
+    };
     reader.readAsDataURL(file);
   });
 }

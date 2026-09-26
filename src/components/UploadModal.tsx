@@ -215,7 +215,11 @@ export const UploadModal: React.FC<UploadModalProps> = ({
     }
 
     setIsProcessing(false);
-    if (onUploadComplete) onUploadComplete();
+    if (onUploadComplete) {
+      setTimeout(() => {
+        onUploadComplete();
+      }, 1000);
+    }
   };
 
   const allSuccess = drafts.length > 0 && drafts.every((d) => d.status === 'success');
@@ -470,10 +474,16 @@ export const UploadModal: React.FC<UploadModalProps> = ({
           <div className="flex gap-2">
             <button
               type="button"
-              onClick={onClose}
-              className="px-4 py-2 text-xs font-medium text-slate-600 hover:bg-slate-200/70 rounded-xl transition-colors"
+              onClick={() => {
+                if (allSuccess && onUploadComplete) {
+                  onUploadComplete();
+                } else {
+                  onClose();
+                }
+              }}
+              className="px-4 py-2 text-xs font-semibold text-slate-700 bg-slate-200/80 hover:bg-slate-300 rounded-xl transition-colors"
             >
-              {allSuccess ? '完成關閉' : '取消'}
+              {allSuccess ? '✅ 完成並檢視冊子' : '取消'}
             </button>
             {!allSuccess && (
               <button

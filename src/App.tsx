@@ -3,7 +3,8 @@ import {
   subscribeBooks, 
   saveExamBook, 
   deleteExamBook, 
-  removeStudentFolder 
+  removeStudentFolder,
+  getLocalBooks
 } from './services/dbService';
 import type { ExamBook } from './types';
 import { Navbar } from './components/Navbar';
@@ -69,7 +70,7 @@ export const App: React.FC = () => {
   // 當前選取的冊子
   const currentBook = books.find((b) => b.id === currentBookId) || books[0] || null;
 
-  // 建立新冊子
+  // 建立新冊子 (樂觀立即更新)
   const handleCreateBook = async (title: string) => {
     const newBook: ExamBook = {
       id: 'exam_' + Date.now(),
@@ -78,23 +79,49 @@ export const App: React.FC = () => {
       updatedAt: Date.now(),
       students: {},
     };
-    await saveExamBook(newBook);
+    // 立即更新前端 state
+    setBooks((prev) => [newBook, ...prev.filter((b) => b.id !== newBook.id)]);
     setCurrentBookId(newBook.id);
+    await saveExamBook(newBook);
   };
 
   // 刪除冊子
   const handleDeleteBook = async (bookId: string) => {
     await deleteExamBook(bookId);
-    const remaining = books.filter((b) => b.id !== bookId);
-    if (remaining.length > 0) {
-      setCurrentBookId(remaining[0].id);
-    }
+    setBooks((prev) => {
+      const remaining = prev.filter((b) => b.id !== bookId);
+      if (remaining.length > 0) {
+        setCurrentBookId(remaining[0].id);
+      }
+      return remaining;
+    });
   };
 
-  // 刪除學生
+  // 刪除學生 (樂觀立即更新)
   const handleDeleteStudent = async (studentName: string) => {
     if (!currentBook) return;
     await removeStudentFolder(currentBook.id, studentName);
+    setBooks((prev) =>
+      prev.map((b) => {
+        if (b.id !== currentBook.id) return b;
+        const newStudents = { ...b.students };
+        delete newStudents[studentName];
+        return { ...b, students: newStudents, updatedAt: Date.now() };
+      })
+    );
+  };
+
+  // 上傳成功後的即時同步回調
+  const handleUploadComplete = () => {
+    // 重新取得最新本機/雲端資料
+    const local = getLocalBooks();
+    const updatedBooks = Object.values(local).sort(
+      (a, b) => (b.updatedAt || 0) - (a.updatedAt || 0)
+    );
+    if (updatedBooks.length > 0) {
+      setBooks(updatedBooks);
+    }
+    setIsUploadOpen(false);
   };
 
   // 如果帶有 ?student=王小明，進入個人專屬模式
@@ -193,9 +220,7 @@ export const App: React.FC = () => {
           currentBook={currentBook}
           isOpen={isUploadOpen}
           onClose={() => setIsUploadOpen(false)}
-          onUploadComplete={() => {
-            // 自動重整或通知
-          }}
+          onUploadComplete={handleUploadComplete}
         />
       )}
 

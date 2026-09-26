@@ -112,7 +112,13 @@ export const Navbar: React.FC<NavbarProps> = ({
               <select
                 aria-label="選擇測驗冊子"
                 value={currentBook?.id || ''}
-                onChange={(e) => onSelectBook(e.target.value)}
+                onChange={(e) => {
+                  if (e.target.value === '__NEW_BOOK__') {
+                    setIsCreating(true);
+                  } else {
+                    onSelectBook(e.target.value);
+                  }
+                }}
                 className="text-xs font-semibold text-indigo-700 bg-indigo-50/70 hover:bg-indigo-100/70 border border-indigo-200 rounded-md px-2 py-0.5 outline-none transition-colors cursor-pointer max-w-[180px] sm:max-w-[260px] truncate"
               >
                 {books.map((b) => (
@@ -120,15 +126,17 @@ export const Navbar: React.FC<NavbarProps> = ({
                     📖 {b.title} ({Object.keys(b.students || {}).length} 人)
                   </option>
                 ))}
+                <option value="__NEW_BOOK__">➕ 新增考試冊子...</option>
               </select>
 
               <button
                 type="button"
                 onClick={() => setIsCreating(true)}
                 title="新增考試冊子"
-                className="p-1 rounded-md text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 transition-colors"
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-semibold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 transition-colors"
               >
-                <Plus className="w-4 h-4" />
+                <Plus className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">新冊子</span>
               </button>
 
               {currentBook && books.length > 1 && (
