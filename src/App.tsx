@@ -187,30 +187,35 @@ export const App: React.FC = () => {
       />
 
       {/* 主要內容區 */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-3 sm:py-6">
         {currentBook ? (
-          <div className="space-y-6">
-            {/* 冊子資訊看板 */}
-            <div className="bg-gradient-to-r from-indigo-700 via-indigo-600 to-indigo-800 rounded-3xl p-6 text-white shadow-xl shadow-indigo-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="space-y-4 sm:space-y-6">
+            {/* 冊子資訊看板 (手機特化緊湊排版) */}
+            <div className="bg-gradient-to-r from-indigo-700 via-indigo-600 to-indigo-800 rounded-2xl sm:rounded-3xl p-4 sm:p-6 text-white shadow-lg shadow-indigo-100/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
               <div className="space-y-1">
-                <div className="flex items-center gap-2 text-indigo-200 text-xs font-semibold uppercase tracking-wider">
-                  <Layers className="w-4 h-4" />
-                  當前測驗冊子
+                <div className="flex items-center gap-1.5 text-indigo-200 text-[11px] font-semibold uppercase tracking-wider">
+                  <Layers className="w-3.5 h-3.5" />
+                  <span>測驗冊子</span>
+                  {currentBook.shareCode && (
+                    <span className="bg-indigo-950/60 px-2 py-0.5 rounded text-[10px] font-mono text-indigo-300">
+                      #{currentBook.shareCode}
+                    </span>
+                  )}
                 </div>
-                <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+                <h2 className="text-lg sm:text-2xl font-black text-white tracking-tight">
                   {currentBook.title}
                 </h2>
-                <p className="text-xs text-indigo-100/90 max-w-xl">
-                  已收錄 {Object.keys(currentBook.students || {}).length} 位學生考卷與截圖。點擊任意卡片可翻頁、縮放檢視批改紅筆細節。
+                <p className="text-xs text-indigo-100/80 max-w-xl">
+                  共收錄 {Object.keys(currentBook.students || {}).length} 位學生考卷。點選任意卡片即可翻頁看圖。
                 </p>
               </div>
 
               {!isViewOnly && (
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 pt-1 sm:pt-0">
                   <button
                     type="button"
                     onClick={() => setIsUploadOpen(true)}
-                    className="inline-flex items-center gap-2 px-4 py-2.5 text-xs font-bold bg-white text-indigo-700 hover:bg-indigo-50 rounded-xl shadow-md transition-all active:scale-95 cursor-pointer whitespace-nowrap"
+                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2 sm:py-2.5 text-xs font-bold bg-white text-indigo-700 hover:bg-indigo-50 rounded-xl shadow-md transition-all active:scale-95 cursor-pointer whitespace-nowrap"
                   >
                     <UploadCloud className="w-4 h-4 text-indigo-600" />
                     <span>上傳本冊成績截圖</span>

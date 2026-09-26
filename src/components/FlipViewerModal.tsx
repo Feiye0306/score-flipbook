@@ -3,15 +3,12 @@ import {
   X, 
   ChevronLeft, 
   ChevronRight, 
-  ZoomIn, 
-  ZoomOut, 
   RotateCw, 
-  Maximize2, 
   Share2, 
   Check, 
   User, 
-  ArrowLeftRight,
-  Download
+  Download,
+  Users
 } from 'lucide-react';
 import type { ExamBook, StudentFolder, ScoreImage } from '../types';
 
@@ -21,7 +18,7 @@ interface FlipViewerModalProps {
   initialPageIndex?: number;
   isOpen: boolean;
   onClose: () => void;
-  isPrivateMode?: boolean; // 若為個別學生專屬模式，不顯示跨學生切換
+  isPrivateMode?: boolean;
 }
 
 export const FlipViewerModal: React.FC<FlipViewerModalProps> = ({
@@ -35,7 +32,7 @@ export const FlipViewerModal: React.FC<FlipViewerModalProps> = ({
   const [currentStudentName, setCurrentStudentName] = useState(initialStudentName);
   const [currentPageIndex, setCurrentPageIndex] = useState(initialPageIndex);
   
-  // 檢視狀態 (縮放、旋轉、平移)
+  // 縮放、旋轉、平移
   const [scale, setScale] = useState(1);
   const [rotation, setRotation] = useState(0);
   const [position, setPosition] = useState({ x: 0, y: 0 });
@@ -43,7 +40,7 @@ export const FlipViewerModal: React.FC<FlipViewerModalProps> = ({
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [copied, setCopied] = useState(false);
 
-  // 手勢滑動 (Touch Swipe) 記錄
+  // 手機滑動紀錄
   const touchStartX = useRef<number>(0);
   const touchEndX = useRef<number>(0);
 
@@ -53,7 +50,17 @@ export const FlipViewerModal: React.FC<FlipViewerModalProps> = ({
     currentBook.students?.[currentStudentName];
   const images: ScoreImage[] = currentStudentFolder?.images || [];
 
-  // 當 initialStudentName 改變時更新
+  const currentStudentIndex = studentNames.indexOf(currentStudentName);
+  const prevStudentName = currentStudentIndex > 0 ? studentNames[currentStudentIndex - 1] : null;
+  const nextStudentName = currentStudentIndex < studentNames.length - 1 ? studentNames[currentStudentIndex + 1] : null;
+
+  // 重置位置
+  const resetTransform = () => {
+    setScale(1);
+    setRotation(0);
+    setPosition({ x: 0, y: 0 });
+  };
+
   useEffect(() => {
     if (isOpen) {
       setCurrentStudentName(initialStudentName);
@@ -62,14 +69,7 @@ export const FlipViewerModal: React.FC<FlipViewerModalProps> = ({
     }
   }, [isOpen, initialStudentName, initialPageIndex]);
 
-  // 重置圖片視角
-  const resetTransform = () => {
-    setScale(1);
-    setRotation(0);
-    setPosition({ x: 0, y: 0 });
-  };
-
-  // 鍵盤快速鍵監聽
+  // 鍵盤操作：左右箭頭翻頁；Shift+左右箭頭切換學生
   useEffect(() => {
     if (!isOpen) return;
 
@@ -77,13 +77,17 @@ export const FlipViewerModal: React.FC<FlipViewerModalProps> = ({
       if (e.key === 'Escape') {
         onClose();
       } else if (e.key === 'ArrowRight' || e.key === 'PageDown') {
-        goToNext();
+        if (e.shiftKey) {
+          goToNextStudent();
+        } else {
+          goToNextPage();
+        }
       } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
-        goToPrev();
-      } else if (e.key === '+' || e.key === '=') {
-        zoomIn();
-      } else if (e.key === '-') {
-        zoomOut();
+        if (e.shiftKey) {
+          goToPrevStudent();
+        } else {
+          goToPrevPage();
+        }
       } else if (e.key === 'r' || e.key === 'R') {
         rotate();
       }
@@ -97,61 +101,41 @@ export const FlipViewerModal: React.FC<FlipViewerModalProps> = ({
 
   const currentImage: ScoreImage | undefined = images[currentPageIndex] || images[0];
 
-  // 下一張 (同學生下一頁，最後一頁則切換下一位學生)
-  const goToNext = () => {
-    resetTransform();
+  // 1. 單純翻頁 (同一個學生考卷頁面切換，絕對不跳到別人)
+  const goToNextPage = () => {
     if (currentPageIndex < images.length - 1) {
+      resetTransform();
       setCurrentPageIndex((prev) => prev + 1);
-    } else if (!isPrivateMode) {
-      // 切換下一位學生
-      const currentIndex = studentNames.indexOf(currentStudentName);
-      if (currentIndex < studentNames.length - 1) {
-        const nextStudent = studentNames[currentIndex + 1];
-        setCurrentStudentName(nextStudent);
-        setCurrentPageIndex(0);
-      }
     }
   };
 
-  // 上一張 (同學生上一頁，第一頁則切換上一位學生)
-  const goToPrev = () => {
-    resetTransform();
+  const goToPrevPage = () => {
     if (currentPageIndex > 0) {
+      resetTransform();
       setCurrentPageIndex((prev) => prev - 1);
-    } else if (!isPrivateMode) {
-      // 切換上一位學生
-      const currentIndex = studentNames.indexOf(currentStudentName);
-      if (currentIndex > 0) {
-        const prevStudent = studentNames[currentIndex - 1];
-        const prevFolder = currentBook.students[prevStudent];
-        setCurrentStudentName(prevStudent);
-        setCurrentPageIndex(Math.max(0, (prevFolder?.images.length || 1) - 1));
-      }
     }
   };
 
-  // 縮放操作
-  const zoomIn = () => setScale((s) => Math.min(s + 0.3, 4));
-  const zoomOut = () => {
-    setScale((s) => {
-      const next = Math.max(s - 0.3, 1);
-      if (next === 1) setPosition({ x: 0, y: 0 });
-      return next;
-    });
+  // 2. 切換學生 (獨立明確動作)
+  const goToNextStudent = () => {
+    if (nextStudentName) {
+      resetTransform();
+      setCurrentStudentName(nextStudentName);
+      setCurrentPageIndex(0);
+    }
   };
+
+  const goToPrevStudent = () => {
+    if (prevStudentName) {
+      resetTransform();
+      setCurrentStudentName(prevStudentName);
+      setCurrentPageIndex(0);
+    }
+  };
+
   const rotate = () => setRotation((r) => (r + 90) % 360);
 
-  // 滾輪縮放
-  const handleWheel = (e: React.WheelEvent) => {
-    e.preventDefault();
-    if (e.deltaY < 0) {
-      zoomIn();
-    } else {
-      zoomOut();
-    }
-  };
-
-  // 拖曳移動 (放大後查看細節)
+  // 拖曳移動
   const handleMouseDown = (e: React.MouseEvent) => {
     if (scale <= 1) return;
     setIsDragging(true);
@@ -166,135 +150,94 @@ export const FlipViewerModal: React.FC<FlipViewerModalProps> = ({
     });
   };
 
-  const handleMouseUp = () => {
-    setIsDragging(false);
-  };
+  const handleMouseUp = () => setIsDragging(false);
 
-  // 手機觸控滑動處理
+  // 手機滑動處理 (同一個學生左右翻頁)
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartX.current = e.targetTouches[0].clientX;
   };
-
   const handleTouchMove = (e: React.TouchEvent) => {
     touchEndX.current = e.targetTouches[0].clientX;
   };
-
   const handleTouchEnd = () => {
-    if (scale > 1) return; // 放大時不觸發手勢翻頁
+    if (scale > 1) return;
     const diff = touchStartX.current - touchEndX.current;
     if (diff > 50) {
-      goToNext(); // 向左滑動 -> 下一頁
+      goToNextPage();
     } else if (diff < -50) {
-      goToPrev(); // 向右滑動 -> 上一頁
+      goToPrevPage();
     }
   };
 
-  // 複製個人專屬連結
+  // 複製學生專屬連結
   const copyStudentLink = () => {
     const url = new URL(window.location.origin + window.location.pathname);
-    url.searchParams.set('book', currentBook.id);
+    const code = currentBook.shareCode || currentBook.id;
+    url.searchParams.set('share', code);
     url.searchParams.set('student', currentStudentName);
     navigator.clipboard.writeText(url.toString());
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const currentStudentIndex = studentNames.indexOf(currentStudentName);
-  const hasPrev = currentPageIndex > 0 || (!isPrivateMode && currentStudentIndex > 0);
-  const hasNext =
-    currentPageIndex < images.length - 1 ||
-    (!isPrivateMode && currentStudentIndex < studentNames.length - 1);
-
   return (
     <div 
-      className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex flex-col select-none animate-in fade-in duration-200"
+      className="fixed inset-0 z-50 bg-black/95 flex flex-col select-none overflow-hidden"
       onMouseUp={handleMouseUp}
     >
-      {/* 頂部操作列 */}
-      <div className="h-14 px-4 flex items-center justify-between text-white border-b border-white/10 bg-black/40">
-        {/* 左側：學生名字與頁數資訊 */}
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1.5 bg-indigo-600/80 px-3 py-1 rounded-full text-xs font-bold text-white shadow-sm">
+      {/* 頂部極簡沉浸工具列 */}
+      <div className="h-14 px-3 sm:px-5 flex items-center justify-between text-white border-b border-white/10 bg-black/60 backdrop-blur-md z-30">
+        {/* 左側：學生姓名與冊子進度 */}
+        <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-1.5 bg-indigo-600 px-3 py-1 rounded-full text-xs font-bold text-white shadow-sm">
             <User className="w-3.5 h-3.5" />
-            <span>{currentStudentName}</span>
-          </div>
-
-          <div className="text-xs text-slate-300 font-medium">
-            第 <span className="text-white font-bold">{currentPageIndex + 1}</span> / {images.length} 頁
+            <span className="max-w-[100px] sm:max-w-none truncate">{currentStudentName}</span>
           </div>
 
           {!isPrivateMode && (
-            <span className="hidden sm:inline-block text-[11px] text-slate-400">
-              (全班第 {currentStudentIndex + 1} / {studentNames.length} 人)
+            <span className="text-[11px] text-slate-400 font-medium hidden sm:inline">
+              ({currentStudentIndex + 1} / {studentNames.length} 人)
             </span>
           )}
+
+          {/* 頁碼指示膠囊 */}
+          <span className="text-xs text-indigo-200 font-semibold bg-white/10 px-2.5 py-0.5 rounded-full">
+            第 {currentPageIndex + 1} / {images.length} 頁
+          </span>
         </div>
 
-        {/* 右側：功能按鈕群 (縮放、旋轉、分享專屬連結、下載、關閉) */}
+        {/* 右側快捷動作 (去蕪存菁，避免臃腫) */}
         <div className="flex items-center gap-1.5 sm:gap-2">
-          {/* 個人專屬連結複製 */}
+          {/* 複製個人專屬連結 */}
           <button
             type="button"
             onClick={copyStudentLink}
-            className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-indigo-200 bg-indigo-950/70 hover:bg-indigo-900 border border-indigo-700/60 rounded-lg transition-colors cursor-pointer"
-            title="複製此學生的專屬分享連結 (其他人點開只會看到該學生的成績圖)"
+            className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-indigo-200 bg-indigo-950/80 hover:bg-indigo-900 border border-indigo-700/60 rounded-lg transition-colors"
+            title="複製此學生的專屬分享連結"
           >
             {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Share2 className="w-3.5 h-3.5" />}
-            <span className="hidden md:inline">{copied ? '已複製個人連結' : '複製個人連結'}</span>
+            <span className="hidden md:inline">{copied ? '已複製' : '個人連結'}</span>
           </button>
 
-          {/* 旋轉按鈕 */}
+          {/* 順時針旋轉 90° */}
           <button
             type="button"
             onClick={rotate}
-            className="p-1.5 text-slate-300 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
-            title="順時針旋轉 90° (R)"
+            className="p-2 text-slate-300 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+            title="旋轉圖片 90° (R)"
           >
             <RotateCw className="w-4 h-4" />
           </button>
 
-          {/* 縮小 */}
-          <button
-            type="button"
-            onClick={zoomOut}
-            disabled={scale <= 1}
-            className="p-1.5 text-slate-300 hover:text-white hover:bg-white/10 disabled:opacity-30 rounded-lg transition-colors"
-            title="縮小 (-)"
-          >
-            <ZoomOut className="w-4 h-4" />
-          </button>
-
-          {/* 放大 */}
-          <button
-            type="button"
-            onClick={zoomIn}
-            disabled={scale >= 4}
-            className="p-1.5 text-slate-300 hover:text-white hover:bg-white/10 disabled:opacity-30 rounded-lg transition-colors"
-            title="放大 (+)"
-          >
-            <ZoomIn className="w-4 h-4" />
-          </button>
-
-          {/* 重設大小 */}
-          {scale > 1 && (
-            <button
-              type="button"
-              onClick={resetTransform}
-              className="text-[11px] px-2 py-1 bg-white/20 hover:bg-white/30 rounded text-white transition-colors"
-            >
-              100%
-            </button>
-          )}
-
-          {/* 下載原圖 */}
+          {/* 原圖下載 */}
           {currentImage && (
             <a
               href={currentImage.url}
               download={`${currentStudentName}_第${currentPageIndex + 1}頁.jpg`}
               target="_blank"
               rel="noopener noreferrer"
-              className="p-1.5 text-slate-300 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
-              title="下載或原圖開啟"
+              className="p-2 text-slate-300 hover:text-white hover:bg-white/10 rounded-lg transition-colors hidden sm:inline-flex"
+              title="下載或原圖查看"
             >
               <Download className="w-4 h-4" />
             </a>
@@ -304,7 +247,7 @@ export const FlipViewerModal: React.FC<FlipViewerModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 ml-2 text-slate-400 hover:text-white hover:bg-rose-600/80 rounded-lg transition-colors"
+            className="p-2 ml-1 text-slate-400 hover:text-white hover:bg-rose-600 rounded-lg transition-colors"
             title="關閉 (Esc)"
           >
             <X className="w-5 h-5" />
@@ -312,10 +255,9 @@ export const FlipViewerModal: React.FC<FlipViewerModalProps> = ({
         </div>
       </div>
 
-      {/* 主展示區 (超流暢大圖翻閱) */}
+      {/* 主展示區 (滿版看圖 + 雙擊放大 + 滑動翻頁) */}
       <div 
-        className="flex-1 relative flex items-center justify-center overflow-hidden p-2 sm:p-6"
-        onWheel={handleWheel}
+        className="flex-1 relative flex items-center justify-center overflow-hidden p-1 sm:p-4"
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onTouchStart={handleTouchStart}
@@ -323,19 +265,19 @@ export const FlipViewerModal: React.FC<FlipViewerModalProps> = ({
         onTouchEnd={handleTouchEnd}
         style={{ cursor: scale > 1 ? (isDragging ? 'grabbing' : 'grab') : 'default' }}
       >
-        {/* 左側翻頁按鈕 */}
-        {hasPrev && (
+        {/* 左側翻頁箭頭 (僅翻同位學生的上一張考卷) */}
+        {currentPageIndex > 0 && (
           <button
             type="button"
-            onClick={goToPrev}
-            className="absolute left-2 sm:left-4 z-20 w-12 h-12 rounded-full bg-black/60 hover:bg-black/90 text-white flex items-center justify-center backdrop-blur-sm border border-white/20 shadow-xl transition-all hover:scale-105"
-            title="上一頁 / 上一位學生 (←)"
+            onClick={goToPrevPage}
+            className="absolute left-2 sm:left-4 z-20 w-11 h-11 sm:w-13 sm:h-13 rounded-full bg-black/60 hover:bg-black/85 text-white flex items-center justify-center border border-white/20 shadow-2xl transition-all hover:scale-105 active:scale-95"
+            title="上一頁考卷"
           >
             <ChevronLeft className="w-7 h-7" />
           </button>
         )}
 
-        {/* 考卷原圖 */}
+        {/* 考卷圖片主體 */}
         {currentImage ? (
           <div
             className="transition-transform duration-100 ease-out max-w-full max-h-full flex items-center justify-center"
@@ -346,10 +288,10 @@ export const FlipViewerModal: React.FC<FlipViewerModalProps> = ({
             <img
               src={currentImage.url}
               alt={`${currentStudentName} 成績考卷截圖`}
-              className="max-h-[calc(100vh-140px)] max-w-[calc(100vw-30px)] sm:max-w-[calc(100vw-120px)] object-contain shadow-2xl rounded-lg pointer-events-none"
+              className="max-h-[calc(100vh-140px)] max-w-[calc(100vw-16px)] sm:max-w-[calc(100vw-80px)] object-contain shadow-2xl rounded-lg pointer-events-none"
               onDoubleClick={() => {
                 if (scale === 1) {
-                  setScale(2);
+                  setScale(2.2);
                 } else {
                   resetTransform();
                 }
@@ -360,73 +302,95 @@ export const FlipViewerModal: React.FC<FlipViewerModalProps> = ({
           <div className="text-slate-400 text-sm">此學生尚無成績截圖</div>
         )}
 
-        {/* 右側翻頁按鈕 */}
-        {hasNext && (
+        {/* 右側翻頁箭頭 (僅翻同位學生的下一張考卷) */}
+        {currentPageIndex < images.length - 1 && (
           <button
             type="button"
-            onClick={goToNext}
-            className="absolute right-2 sm:right-4 z-20 w-12 h-12 rounded-full bg-black/60 hover:bg-black/90 text-white flex items-center justify-center backdrop-blur-sm border border-white/20 shadow-xl transition-all hover:scale-105"
-            title="下一頁 / 下一位學生 (→)"
+            onClick={goToNextPage}
+            className="absolute right-2 sm:right-4 z-20 w-11 h-11 sm:w-13 sm:h-13 rounded-full bg-black/60 hover:bg-black/85 text-white flex items-center justify-center border border-white/20 shadow-2xl transition-all hover:scale-105 active:scale-95"
+            title="下一頁考卷"
           >
             <ChevronRight className="w-7 h-7" />
           </button>
         )}
       </div>
 
-      {/* 底部導覽列 (縮圖列與快速跳頁) */}
-      <div className="h-16 bg-black/50 border-t border-white/10 px-4 flex items-center justify-between gap-3 overflow-x-auto no-scrollbar">
-        {/* 左側學生快速選單 (非私密模式) */}
-        {!isPrivateMode && (
-          <div className="flex items-center gap-1.5 flex-shrink-0">
-            <span className="text-[11px] text-slate-400 hidden sm:inline">切換學生：</span>
-            <select
-              aria-label="切換學生"
-              value={currentStudentName}
-              onChange={(e) => {
-                setCurrentStudentName(e.target.value);
-                setCurrentPageIndex(0);
-                resetTransform();
-              }}
-              className="bg-slate-800 text-xs font-semibold text-white px-2.5 py-1 rounded-md border border-slate-700 outline-none cursor-pointer"
-            >
-              {studentNames.map((s) => (
-                <option key={s} value={s}>
-                  {s} ({currentBook.students[s]?.images.length || 0}頁)
-                </option>
-              ))}
-            </select>
+      {/* 底部功能 Dock：翻人與翻圖明確拆開 */}
+      <div className="bg-black/75 border-t border-white/10 px-3 sm:px-6 py-2.5 flex flex-col gap-2 z-30 backdrop-blur-md">
+        {/* 多頁指示器小圓點 (手機直覺預覽) */}
+        {images.length > 1 && (
+          <div className="flex items-center justify-center gap-1.5 py-0.5">
+            {images.map((_, idx) => (
+              <button
+                key={idx}
+                type="button"
+                onClick={() => {
+                  resetTransform();
+                  setCurrentPageIndex(idx);
+                }}
+                className={`transition-all rounded-full ${
+                  currentPageIndex === idx
+                    ? 'w-5 h-1.5 bg-indigo-500'
+                    : 'w-1.5 h-1.5 bg-white/30 hover:bg-white/60'
+                }`}
+                title={`第 ${idx + 1} 頁`}
+              />
+            ))}
           </div>
         )}
 
-        {/* 中間：當前學生所有頁面縮圖列表 */}
-        <div className="flex items-center gap-2 mx-auto overflow-x-auto py-1">
-          {images.map((img, idx) => (
+        {/* 底部導覽：切換學生專屬按鈕列 */}
+        <div className="flex items-center justify-between gap-2 max-w-2xl mx-auto w-full">
+          {/* 上一位學生 */}
+          {!isPrivateMode && (
             <button
-              key={img.id || idx}
               type="button"
-              onClick={() => {
-                setCurrentPageIndex(idx);
-                resetTransform();
-              }}
-              className={`h-11 w-14 rounded-md overflow-hidden flex-shrink-0 border-2 transition-all ${
-                currentPageIndex === idx
-                  ? 'border-indigo-400 scale-105 ring-2 ring-indigo-500/50'
-                  : 'border-white/20 opacity-50 hover:opacity-90'
-              }`}
+              disabled={!prevStudentName}
+              onClick={goToPrevStudent}
+              className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-bold text-white bg-slate-800/90 hover:bg-slate-700 disabled:opacity-30 disabled:pointer-events-none rounded-xl border border-white/10 shadow-sm active:scale-95 transition-all truncate"
             >
-              <img
-                src={img.url}
-                alt={`第 ${idx + 1} 頁`}
-                className="w-full h-full object-cover"
-              />
+              <ChevronLeft className="w-4 h-4 text-indigo-400 flex-shrink-0" />
+              <span className="truncate">{prevStudentName ? `上一位：${prevStudentName}` : '已是第一位'}</span>
             </button>
-          ))}
-        </div>
+          )}
 
-        {/* 翻頁提示說明 */}
-        <div className="hidden lg:flex items-center gap-3 text-[11px] text-slate-400 flex-shrink-0">
-          <span>鍵盤「← / →」翻頁</span>
-          <span>「滾輪 / 雙擊」放大</span>
+          {/* 當前學生縮圖快速跳頁 (桌機顯示) */}
+          <div className="hidden sm:flex items-center gap-1.5 overflow-x-auto px-2">
+            {images.map((img, idx) => (
+              <button
+                key={img.id || idx}
+                type="button"
+                onClick={() => {
+                  resetTransform();
+                  setCurrentPageIndex(idx);
+                }}
+                className={`h-9 w-12 rounded-md overflow-hidden flex-shrink-0 border transition-all ${
+                  currentPageIndex === idx
+                    ? 'border-indigo-400 scale-105 ring-1 ring-indigo-400'
+                    : 'border-white/20 opacity-40 hover:opacity-80'
+                }`}
+              >
+                <img
+                  src={img.url}
+                  alt={`第 ${idx + 1} 頁`}
+                  className="w-full h-full object-cover"
+                />
+              </button>
+            ))}
+          </div>
+
+          {/* 下一位學生 */}
+          {!isPrivateMode && (
+            <button
+              type="button"
+              disabled={!nextStudentName}
+              onClick={goToNextStudent}
+              className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-30 disabled:pointer-events-none rounded-xl shadow-md shadow-indigo-900/40 active:scale-95 transition-all truncate"
+            >
+              <span className="truncate">{nextStudentName ? `下一位：${nextStudentName}` : '已是最後一位'}</span>
+              <ChevronRight className="w-4 h-4 text-white flex-shrink-0" />
+            </button>
+          )}
         </div>
       </div>
     </div>
