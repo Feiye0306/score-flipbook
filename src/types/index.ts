@@ -27,6 +27,7 @@ export interface ExamBook {
   description?: string;    // 說明
   students: Record<string, StudentFolder>; // 以學生姓名或 ID 為 key
   isPublic?: boolean;      // 是否開放瀏覽 (預設 true)
+  shareCode?: string;      // 該冊專屬隨機分享碼 (如 bk_a9x2e1)
 }
 
 export interface UploadBatchItem {

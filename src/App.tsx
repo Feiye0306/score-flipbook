@@ -24,6 +24,7 @@ export const App: React.FC = () => {
   const [viewerStudent, setViewerStudent] = useState<string | null>(null);
   const [viewerPageIndex, setViewerPageIndex] = useState(0);
   const [isViewOnly, setIsViewOnly] = useState(false);
+  const [isSingleBookMode, setIsSingleBookMode] = useState(false);
 
   // URL 參數 (判斷是否為個別學生私密專屬連結或唯讀模式)
   const [urlStudent, setUrlStudent] = useState<string | null>(null);
@@ -32,34 +33,59 @@ export const App: React.FC = () => {
   useEffect(() => {
     // 讀取 URL 參數
     const params = new URLSearchParams(window.location.search);
-    const bookParam = params.get('book');
+    const shareParam = params.get('share') || params.get('book');
     const studentParam = params.get('student');
     const modeParam = params.get('mode');
 
     if (studentParam) setUrlStudent(studentParam);
     if (modeParam === 'view') setIsViewOnly(true);
+    if (shareParam) setIsSingleBookMode(true);
 
     const unsubscribe = subscribeBooks((loadedBooks) => {
-      setBooks(loadedBooks);
+      // 確保每本冊子都有 shareCode
+      const normalizedBooks = loadedBooks.map((b) => ({
+        ...b,
+        shareCode: b.shareCode || b.id,
+      }));
 
-      if (loadedBooks.length > 0) {
-        // 若 URL 指定了冊子，優先使用
-        if (bookParam && loadedBooks.some((b) => b.id === bookParam)) {
-          setCurrentBookId(bookParam);
+      setBooks(normalizedBooks);
+
+      if (normalizedBooks.length > 0) {
+        if (shareParam) {
+          const matched = normalizedBooks.find(
+            (b) => b.shareCode === shareParam || b.id === shareParam
+          );
+          if (matched) {
+            setCurrentBookId(matched.id);
+          } else {
+            // 訪客透過隨機新連結進入，為其建立此專屬冊子
+            const sharedNewBook: ExamBook = {
+              id: 'exam_' + Date.now(),
+              title: '分享的測驗成績冊',
+              shareCode: shareParam,
+              createdAt: Date.now(),
+              updatedAt: Date.now(),
+              students: {},
+            };
+            saveExamBook(sharedNewBook);
+            setBooks((prev) => [sharedNewBook, ...prev]);
+            setCurrentBookId(sharedNewBook.id);
+          }
         } else {
-          // 預設選取最新一本
-          setCurrentBookId((prev) => (prev ? prev : loadedBooks[0].id));
+          setCurrentBookId((prev) => (prev ? prev : normalizedBooks[0].id));
         }
       } else {
         // 初次若無任何冊子，自動建立預設第一本
         const defaultBook: ExamBook = {
           id: 'exam_' + Date.now(),
           title: '第一次段考 - 數學科',
+          shareCode: 'bk_' + Math.random().toString(36).substring(2, 8),
           createdAt: Date.now(),
           updatedAt: Date.now(),
           students: {},
         };
         saveExamBook(defaultBook);
+        setBooks([defaultBook]);
         setCurrentBookId(defaultBook.id);
       }
     });
@@ -70,11 +96,13 @@ export const App: React.FC = () => {
   // 當前選取的冊子
   const currentBook = books.find((b) => b.id === currentBookId) || books[0] || null;
 
-  // 建立新冊子 (樂觀立即更新)
+  // 建立新冊子 (樂觀立即更新，含專屬隨機分享碼)
   const handleCreateBook = async (title: string) => {
+    const randomShareCode = 'bk_' + Math.random().toString(36).substring(2, 8);
     const newBook: ExamBook = {
       id: 'exam_' + Date.now(),
       title,
+      shareCode: randomShareCode,
       createdAt: Date.now(),
       updatedAt: Date.now(),
       students: {},
@@ -155,6 +183,7 @@ export const App: React.FC = () => {
         onSearchChange={setSearchQuery}
         onOpenUpload={() => setIsUploadOpen(true)}
         isViewOnly={isViewOnly}
+        isSingleBookMode={isSingleBookMode}
       />
 
       {/* 主要內容區 */}

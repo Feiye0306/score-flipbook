@@ -31,6 +31,7 @@ interface NavbarProps {
   onSearchChange: (q: string) => void;
   onOpenUpload: () => void;
   isViewOnly?: boolean;
+  isSingleBookMode?: boolean;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -44,6 +45,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onSearchChange,
   onOpenUpload,
   isViewOnly = false,
+  isSingleBookMode = false,
 }) => {
   const [isCreating, setIsCreating] = useState(false);
   const [newTitle, setNewTitle] = useState('');
@@ -62,7 +64,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   const getShareUrl = (mode: 'collab' | 'view' = 'collab') => {
     if (!currentBook) return window.location.href;
     const url = new URL(window.location.origin + window.location.pathname);
-    url.searchParams.set('book', currentBook.id);
+    const code = currentBook.shareCode || currentBook.id;
+    url.searchParams.set('share', code);
     if (mode === 'view') {
       url.searchParams.set('mode', 'view');
     }
@@ -107,53 +110,61 @@ export const Navbar: React.FC<NavbarProps> = ({
               </span>
             </div>
 
-            {/* 冊子下拉選單 */}
-            <div className="flex items-center gap-2 mt-0.5">
-              <select
-                aria-label="選擇測驗冊子"
-                value={currentBook?.id || ''}
-                onChange={(e) => {
-                  if (e.target.value === '__NEW_BOOK__') {
-                    setIsCreating(true);
-                  } else {
-                    onSelectBook(e.target.value);
-                  }
-                }}
-                className="text-xs font-semibold text-indigo-700 bg-indigo-50/70 hover:bg-indigo-100/70 border border-indigo-200 rounded-md px-2 py-0.5 outline-none transition-colors cursor-pointer max-w-[180px] sm:max-w-[260px] truncate"
-              >
-                {books.map((b) => (
-                  <option key={b.id} value={b.id}>
-                    📖 {b.title} ({Object.keys(b.students || {}).length} 人)
-                  </option>
-                ))}
-                <option value="__NEW_BOOK__">➕ 新增考試冊子...</option>
-              </select>
-
-              <button
-                type="button"
-                onClick={() => setIsCreating(true)}
-                title="新增考試冊子"
-                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-semibold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 transition-colors"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">新冊子</span>
-              </button>
-
-              {currentBook && books.length > 1 && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (confirm(`確定要刪除冊子「${currentBook.title}」及其所有學生圖片嗎？`)) {
-                      onDeleteBook(currentBook.id);
+            {/* 冊子導覽或單冊專屬模式 */}
+            {isSingleBookMode ? (
+              <div className="flex items-center gap-2 mt-0.5">
+                <span className="text-xs font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 px-2.5 py-0.5 rounded-md truncate max-w-[200px] sm:max-w-[320px]">
+                  📖 {currentBook?.title} (專屬協作模式)
+                </span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 mt-0.5">
+                <select
+                  aria-label="選擇測驗冊子"
+                  value={currentBook?.id || ''}
+                  onChange={(e) => {
+                    if (e.target.value === '__NEW_BOOK__') {
+                      setIsCreating(true);
+                    } else {
+                      onSelectBook(e.target.value);
                     }
                   }}
-                  title="刪除當前冊子"
-                  className="p-1 rounded-md text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                  className="text-xs font-semibold text-indigo-700 bg-indigo-50/70 hover:bg-indigo-100/70 border border-indigo-200 rounded-md px-2 py-0.5 outline-none transition-colors cursor-pointer max-w-[180px] sm:max-w-[260px] truncate"
                 >
-                  <Trash2 className="w-3.5 h-3.5" />
+                  {books.map((b) => (
+                    <option key={b.id} value={b.id}>
+                      📖 {b.title} ({Object.keys(b.students || {}).length} 人)
+                    </option>
+                  ))}
+                  <option value="__NEW_BOOK__">➕ 新增考試冊子...</option>
+                </select>
+
+                <button
+                  type="button"
+                  onClick={() => setIsCreating(true)}
+                  title="新增考試冊子"
+                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-semibold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 transition-colors"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">新冊子</span>
                 </button>
-              )}
-            </div>
+
+                {currentBook && books.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (confirm(`確定要刪除冊子「${currentBook.title}」及其所有學生圖片嗎？`)) {
+                        onDeleteBook(currentBook.id);
+                      }
+                    }}
+                    title="刪除當前冊子"
+                    className="p-1 rounded-md text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
