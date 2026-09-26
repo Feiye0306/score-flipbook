@@ -18,7 +18,7 @@ import { FlipViewerModal } from './components/FlipViewerModal';
 import { StudentPrivateView } from './components/StudentPrivateView';
 import { ShareModal } from './components/ShareModal';
 import { FirebaseGuideModal } from './components/FirebaseGuideModal';
-import { BookOpen, UploadCloud, Users, ArrowLeft, Download, Loader2, ShieldCheck, ShieldAlert } from 'lucide-react';
+import { BookOpen, UploadCloud, Users, ArrowLeft, Download, Loader2, ShieldCheck, ShieldAlert, Calendar, ArrowRight } from 'lucide-react';
 import { downloadBookImages } from './utils/zipExporter';
 
 export const App: React.FC = () => {
@@ -329,60 +329,67 @@ export const App: React.FC = () => {
             isViewOnly={isViewOnly}
           />
         ) : currentBook ? (
-          /* 【單冊名單管理模式】：手機深度特化紙質風格看板 + 學生卡片清單 */
-          <div className="space-y-4 sm:space-y-6 animate-in fade-in duration-150">
-            {/* 冊子資訊看板 (手機/電腦極致自適應) */}
-            <div className="bg-white rounded-2xl border border-stone-200/90 p-4 sm:p-6 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-              <div className="space-y-1 sm:space-y-1.5">
+          /* 【單冊名單管理模式】：Murmurs 雜誌高級感看板 + 學生卡片清單 */
+          <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-150">
+            {/* 冊子資訊看板 (大氣排版、超大標題、呼吸留白) */}
+            <div className="bg-white/80 backdrop-blur-xs rounded-3xl border border-[#E8E6E1] p-6 sm:p-8 shadow-xs flex flex-col lg:flex-row lg:items-end justify-between gap-6">
+              <div className="space-y-2 max-w-2xl">
+                {/* 頂部精緻麵包屑導航 */}
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
                     onClick={() => setActiveTab('shelf')}
-                    className="inline-flex items-center gap-1 text-xs font-bold text-stone-500 hover:text-stone-900 transition-colors cursor-pointer"
+                    className="inline-flex items-center gap-1.5 text-xs font-bold text-stone-500 hover:text-[#111111] transition-colors cursor-pointer"
                   >
                     <ArrowLeft className="w-3.5 h-3.5" />
                     <span>返回冊子書架</span>
                   </button>
-                  <span className="text-stone-300">·</span>
-                  <span className={`text-[10px] sm:text-[11px] font-bold px-2 py-0.5 rounded border ${getBookTheme(currentBook.id, currentBook.title).accentLight} ${getBookTheme(currentBook.id, currentBook.title).accentText} ${getBookTheme(currentBook.id, currentBook.title).accentBorder}`}>
-                    圖文冊 · {getBookTheme(currentBook.id, currentBook.title).label}
+                  <span className="text-stone-300">/</span>
+                  <span className="text-xs font-medium text-stone-400">
+                    目前瀏覽圖冊
                   </span>
                 </div>
 
-                <h2 className="text-lg sm:text-2xl font-bold text-stone-900 font-serif tracking-tight">
+                {/* 當前頁面的名字：超大、突出、極具藝術氣質的優雅襯線字體 */}
+                <h1 className="text-3xl sm:text-4xl lg:text-5xl font-serif font-extrabold text-[#111111] tracking-tight leading-tight">
                   {currentBook.title}
-                </h2>
-                <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-stone-500">
-                  <span className="font-medium text-stone-700">
+                </h1>
+
+                {/* 元數據統計與修訂時間 */}
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs sm:text-sm text-stone-500 pt-1 font-medium">
+                  <span className="font-semibold text-stone-800">
                     名單 {studentCount} 人 · 共 {Object.values(currentBook.students || {}).reduce((acc, s) => acc + (s.images?.length || 0), 0)} 張圖
                   </span>
                   {currentBook.updatedAt && (
                     <>
                       <span className="text-stone-300">·</span>
-                      <span className="text-stone-400">
-                        最後修訂：{new Date(currentBook.updatedAt).toLocaleDateString('zh-TW', { year: 'numeric', month: '2-digit', day: '2-digit' })} {new Date(currentBook.updatedAt).toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', hour12: false })}
+                      <span className="text-stone-500 flex items-center gap-1">
+                        <Calendar className="w-3.5 h-3.5 text-stone-400" />
+                        <span>最後修訂：{new Date(currentBook.updatedAt).toLocaleDateString('zh-TW', { year: 'numeric', month: '2-digit', day: '2-digit' })} {new Date(currentBook.updatedAt).toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', hour12: false })}</span>
                       </span>
                     </>
                   )}
                 </div>
               </div>
 
-              {/* 橫幅主要動作區：手機版友善排版 (絕不碎裂、絕不折行) */}
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 pt-2 lg:pt-0 w-full lg:w-auto">
+              {/* 橫幅主要動作區：Murmurs 炭黑膠囊按鈕與細線輪廓按鈕 */}
+              <div className="flex flex-wrap items-center gap-2.5 pt-2 lg:pt-0">
                 {studentCount > 0 ? (
                   <>
+                    {/* 主翻閱按鈕：深邃炭黑圓角膠囊 */}
                     <button
                       type="button"
                       onClick={() => handleOpenViewerForBook(currentBook)}
-                      className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 text-xs font-bold text-white bg-stone-900 hover:bg-stone-800 rounded-xl shadow-sm transition-all active:scale-95 cursor-pointer whitespace-nowrap"
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-6 py-3 text-xs sm:text-sm font-bold text-white bg-[#111111] hover:bg-[#262626] rounded-full shadow-sm transition-all active:scale-95 cursor-pointer whitespace-nowrap"
                       title="從第 1 位成員開始全螢幕依序翻閱"
                     >
-                      <BookOpen className="w-4 h-4 text-amber-400" />
-                      <span>📖 開始翻閱全冊 ({studentCount}人)</span>
+                      <BookOpen className="w-4 h-4 text-white" />
+                      <span>開始翻閱全冊 ({studentCount}人)</span>
+                      <ArrowRight className="w-4 h-4 text-white/70" />
                     </button>
 
                     <div className="flex items-center gap-2 w-full sm:w-auto">
-                      {/* 整冊打包下載按鈕 */}
+                      {/* 整冊打包下載按鈕：精緻細線白底膠囊 */}
                       <button
                         type="button"
                         onClick={async () => {
@@ -400,7 +407,7 @@ export const App: React.FC = () => {
                           }
                         }}
                         disabled={isDownloadingBook}
-                        className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 text-xs font-bold text-stone-700 bg-stone-100 hover:bg-stone-200 border border-stone-200 rounded-xl shadow-xs transition-all cursor-pointer whitespace-nowrap disabled:opacity-50"
+                        className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-4 sm:px-5 py-2.5 text-xs sm:text-sm font-semibold text-[#111111] bg-white hover:bg-stone-50 border border-[#DCD9D2] hover:border-[#111111] rounded-full shadow-2xs transition-all cursor-pointer whitespace-nowrap disabled:opacity-50"
                         title="打包下載本冊所有圖片為 Zip 壓縮檔 (依成員自動分類資料夾)"
                       >
                         {isDownloadingBook ? (
@@ -416,26 +423,27 @@ export const App: React.FC = () => {
                         )}
                       </button>
 
+                      {/* 分享協作按鈕 */}
                       <button
                         type="button"
                         onClick={() => {
                           setShareModalBook(currentBook);
                           setIsShareModalOpen(true);
                         }}
-                        className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 text-xs font-bold text-amber-900 bg-amber-50 hover:bg-amber-100 border border-amber-200/80 rounded-xl shadow-xs transition-all cursor-pointer whitespace-nowrap"
+                        className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-4 sm:px-5 py-2.5 text-xs sm:text-sm font-semibold text-[#111111] bg-white hover:bg-stone-50 border border-[#DCD9D2] hover:border-[#111111] rounded-full shadow-2xs transition-all cursor-pointer whitespace-nowrap"
                         title="產生本冊專屬連結，發給他人一起看圖與上傳"
                       >
-                        <Users className="w-4 h-4 text-amber-700" />
-                        <span>👥 分享協作</span>
+                        <Users className="w-4 h-4 text-stone-700" />
+                        <span>分享協作</span>
                       </button>
 
                       {!isViewOnly && (
                         <button
                           type="button"
                           onClick={() => setIsUploadOpen(true)}
-                          className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 text-xs font-bold text-stone-700 bg-white hover:bg-stone-50 border border-stone-300 rounded-xl shadow-xs transition-all cursor-pointer whitespace-nowrap"
+                          className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-4 sm:px-5 py-2.5 text-xs sm:text-sm font-semibold text-[#111111] bg-white hover:bg-stone-50 border border-[#DCD9D2] hover:border-[#111111] rounded-full shadow-2xs transition-all cursor-pointer whitespace-nowrap"
                         >
-                          <UploadCloud className="w-4 h-4 text-stone-600" />
+                          <UploadCloud className="w-4 h-4 text-stone-700" />
                           <span>＋ 上傳</span>
                         </button>
                       )}

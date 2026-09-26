@@ -233,8 +233,8 @@ export const FlipViewerModal: React.FC<FlipViewerModalProps> = ({
         {/* 左側：冊子名稱 + 學生目錄展開鈕 + 當前學生資訊 */}
         <div className="flex items-center gap-2 sm:gap-3 min-w-0">
           {/* 冊子名稱標題 */}
-          <div className="hidden lg:flex items-center gap-1.5 text-stone-300 text-xs font-serif font-bold border-r border-white/10 pr-3 mr-1 truncate max-w-[200px]">
-            <BookOpen className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
+          <div className="hidden lg:flex items-center gap-1.5 text-stone-200 text-xs font-serif font-bold border-r border-white/10 pr-3 mr-1 truncate max-w-[200px]">
+            <BookOpen className="w-3.5 h-3.5 text-white flex-shrink-0" />
             <span className="truncate">{currentBook.title}</span>
           </div>
 
@@ -243,10 +243,10 @@ export const FlipViewerModal: React.FC<FlipViewerModalProps> = ({
             <button
               type="button"
               onClick={() => setShowDirectory(!showDirectory)}
-              className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
                 showDirectory
-                  ? 'bg-amber-400 text-stone-950 shadow-md'
-                  : 'bg-stone-800 text-stone-200 hover:bg-stone-700 hover:text-white border border-stone-700'
+                  ? 'bg-white text-[#111111] shadow-sm'
+                  : 'bg-white/10 text-stone-200 hover:bg-white/20 hover:text-white border border-white/15'
               }`}
               title="展開全班學生名單與快速跳轉"
             >
@@ -256,8 +256,8 @@ export const FlipViewerModal: React.FC<FlipViewerModalProps> = ({
           )}
 
           {/* 當前學生姓名膠囊 */}
-          <div className="flex items-center gap-1.5 bg-stone-800/90 border border-stone-700/80 px-2.5 sm:px-3 py-1 rounded-lg text-xs font-bold text-stone-100 shadow-sm truncate">
-            <User className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
+          <div className="flex items-center gap-1.5 bg-white/10 border border-white/15 px-3 py-1 rounded-full text-xs font-bold text-white shadow-2xs truncate">
+            <User className="w-3.5 h-3.5 text-white/80 flex-shrink-0" />
             <span className="truncate max-w-[90px] sm:max-w-none">{currentStudentName}</span>
             <span className="text-[10px] text-stone-400 font-mono hidden sm:inline">
               ({currentStudentIndex + 1}/{studentNames.length})
@@ -265,7 +265,7 @@ export const FlipViewerModal: React.FC<FlipViewerModalProps> = ({
           </div>
 
           {/* 頁碼指示膠囊 */}
-          <span className="text-xs text-amber-300 font-semibold bg-white/10 px-2 sm:px-2.5 py-0.5 rounded-md flex-shrink-0">
+          <span className="text-xs text-stone-200 font-medium bg-white/10 px-2.5 py-0.5 rounded-full flex-shrink-0 border border-white/10">
             {currentPageIndex + 1} / {images.length} 頁
           </span>
         </div>
@@ -276,13 +276,13 @@ export const FlipViewerModal: React.FC<FlipViewerModalProps> = ({
           <button
             type="button"
             onClick={copyBookCollabLink}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-stone-950 bg-amber-400 hover:bg-amber-300 rounded-lg shadow-sm transition-all active:scale-95 cursor-pointer whitespace-nowrap"
+            className="inline-flex items-center gap-1.5 px-4 py-1.5 text-xs font-bold text-[#111111] bg-white hover:bg-stone-200 rounded-full shadow-sm transition-all active:scale-95 cursor-pointer whitespace-nowrap"
             title="複製本冊專屬協作連結（他人點開可看圖、可上傳考卷）"
           >
             {copiedType === 'collab' ? (
-              <Check className="w-3.5 h-3.5 text-stone-950" />
+              <Check className="w-3.5 h-3.5 text-[#111111]" />
             ) : (
-              <Users className="w-3.5 h-3.5 text-stone-950" />
+              <Users className="w-3.5 h-3.5 text-[#111111]" />
             )}
             <span className="hidden sm:inline">{copiedType === 'collab' ? '已複製協作連結！' : '分享本冊協作'}</span>
             <span className="sm:hidden">{copiedType === 'collab' ? '已複製' : '分享'}</span>
@@ -292,7 +292,7 @@ export const FlipViewerModal: React.FC<FlipViewerModalProps> = ({
           <button
             type="button"
             onClick={rotate}
-            className="p-2 text-stone-300 hover:text-white hover:bg-white/10 rounded-lg transition-colors cursor-pointer"
+            className="p-2 text-stone-300 hover:text-white hover:bg-white/10 rounded-full transition-colors cursor-pointer"
             title="旋轉圖片 90° (R)"
           >
             <RotateCw className="w-4 h-4" />
@@ -305,7 +305,7 @@ export const FlipViewerModal: React.FC<FlipViewerModalProps> = ({
               download={`${currentStudentName}_第${currentPageIndex + 1}頁.jpg`}
               target="_blank"
               rel="noopener noreferrer"
-              className="p-2 text-stone-300 hover:text-white hover:bg-white/10 rounded-lg transition-colors hidden sm:inline-flex"
+              className="p-2 text-stone-300 hover:text-white hover:bg-white/10 rounded-full transition-colors hidden sm:inline-flex"
               title="下載或原圖查看"
             >
               <Download className="w-4 h-4" />
@@ -316,7 +316,7 @@ export const FlipViewerModal: React.FC<FlipViewerModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="p-2 ml-1 text-stone-400 hover:text-white hover:bg-rose-600 rounded-lg transition-colors cursor-pointer"
+            className="p-2 ml-1 text-stone-400 hover:text-white hover:bg-white/10 rounded-full transition-colors cursor-pointer"
             title="關閉閱卷 (Esc)"
           >
             <X className="w-5 h-5" />
@@ -329,11 +329,11 @@ export const FlipViewerModal: React.FC<FlipViewerModalProps> = ({
         {/* 左側：學生總目錄抽屜面板 (可開關) */}
         {showDirectory && !isPrivateMode && (
           <div className="w-64 sm:w-72 bg-[#18191E] border-r border-white/10 flex flex-col z-40 animate-in slide-in-from-left duration-200 shadow-2xl flex-shrink-0">
-            <div className="p-3 border-b border-white/10 flex items-center justify-between">
+            <div className="p-3.5 border-b border-white/10 flex items-center justify-between">
               <span className="text-xs font-bold text-stone-200 flex items-center gap-1.5">
-                <Users className="w-3.5 h-3.5 text-amber-400" />
+                <Users className="w-3.5 h-3.5 text-stone-300" />
                 <span>全冊學生目錄</span>
-                <span className="text-[10px] text-stone-400 bg-white/10 px-1.5 py-0.5 rounded">
+                <span className="text-[10px] text-stone-400 bg-white/10 px-2 py-0.5 rounded-full">
                   {studentNames.length}人
                 </span>
               </span>
@@ -347,15 +347,15 @@ export const FlipViewerModal: React.FC<FlipViewerModalProps> = ({
             </div>
 
             {/* 搜尋學生 */}
-            <div className="p-2 border-b border-white/10">
+            <div className="p-2.5 border-b border-white/10">
               <div className="relative">
-                <Search className="w-3.5 h-3.5 text-stone-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+                <Search className="w-3.5 h-3.5 text-stone-400 absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
                   placeholder="搜尋姓名..."
                   value={directorySearch}
                   onChange={(e) => setDirectorySearch(e.target.value)}
-                  className="w-full pl-8 pr-2 py-1 text-xs bg-stone-900 border border-stone-700 rounded-md text-stone-100 placeholder-stone-500 outline-none focus:border-amber-400"
+                  className="w-full pl-8 pr-2.5 py-1.5 text-xs bg-white/5 border border-white/10 rounded-full text-stone-100 placeholder-stone-500 outline-none focus:border-white/40"
                 />
               </div>
             </div>
@@ -376,20 +376,20 @@ export const FlipViewerModal: React.FC<FlipViewerModalProps> = ({
                       setCurrentStudentName(name);
                       setCurrentPageIndex(0);
                     }}
-                    className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs transition-all text-left cursor-pointer ${
+                    className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs transition-all text-left cursor-pointer ${
                       isSelected
-                        ? 'bg-amber-400 text-stone-950 font-bold shadow'
+                        ? 'bg-white text-[#111111] font-bold shadow-sm'
                         : 'text-stone-300 hover:bg-white/5 hover:text-white'
                     }`}
                   >
                     <div className="flex items-center gap-2 truncate">
-                      <span className={`w-5 text-[11px] font-mono ${isSelected ? 'text-stone-900' : 'text-stone-500'}`}>
+                      <span className={`w-5 text-[11px] font-mono ${isSelected ? 'text-stone-800' : 'text-stone-500'}`}>
                         {idx + 1}.
                       </span>
                       <span className="truncate">{name}</span>
                     </div>
-                    <span className={`text-[10px] px-1.5 py-0.5 rounded ${
-                      isSelected ? 'bg-stone-950/20 text-stone-950 font-bold' : 'bg-stone-800 text-stone-400'
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full ${
+                      isSelected ? 'bg-stone-200 text-stone-900 font-bold' : 'bg-white/10 text-stone-400'
                     }`}>
                       {pageCount} 頁
                     </span>
