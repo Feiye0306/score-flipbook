@@ -225,23 +225,23 @@ export const UploadModal: React.FC<UploadModalProps> = ({
   const allSuccess = drafts.length > 0 && drafts.every((d) => d.status === 'success');
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] flex flex-col my-auto animate-in fade-in zoom-in-95 duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-stone-950/60 backdrop-blur-sm p-4 overflow-y-auto">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] flex flex-col my-auto animate-in fade-in zoom-in-95 duration-200 border border-stone-200">
         {/* 頂部標題列 */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-stone-200">
           <div>
-            <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-              <UploadCloud className="w-5 h-5 text-indigo-600" />
+            <h2 className="text-lg font-bold text-stone-900 flex items-center gap-2 font-serif">
+              <UploadCloud className="w-5 h-5 text-amber-700" />
               上傳成績截圖至「{currentBook.title}」
             </h2>
-            <p className="text-xs text-slate-500 mt-0.5">
+            <p className="text-xs text-stone-500 mt-0.5">
               最多只要打學生名字！一個人可傳多張截圖，會自動歸納在該學生的同一冊中。
             </p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+            className="p-1 rounded-lg text-stone-400 hover:text-stone-600 hover:bg-stone-100 transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -257,7 +257,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({
               e.preventDefault();
               if (e.dataTransfer.files) handleFiles(e.dataTransfer.files);
             }}
-            className="border-2 border-dashed border-indigo-200 hover:border-indigo-400 bg-indigo-50/40 hover:bg-indigo-50/70 rounded-2xl p-6 text-center transition-all cursor-pointer group"
+            className="border-2 border-dashed border-stone-300 hover:border-amber-500 bg-stone-50/60 hover:bg-amber-50/20 rounded-2xl p-6 text-center transition-all cursor-pointer group"
           >
             <input
               type="file"
@@ -269,13 +269,13 @@ export const UploadModal: React.FC<UploadModalProps> = ({
                 if (e.target.files) handleFiles(e.target.files);
               }}
             />
-            <div className="w-12 h-12 mx-auto rounded-full bg-indigo-100 group-hover:scale-110 flex items-center justify-center text-indigo-600 transition-transform mb-2">
+            <div className="w-12 h-12 mx-auto rounded-full bg-amber-50 group-hover:scale-110 flex items-center justify-center text-amber-700 transition-transform mb-2 border border-amber-200/60">
               <UploadCloud className="w-6 h-6" />
             </div>
-            <p className="text-sm font-semibold text-indigo-950">
+            <p className="text-sm font-semibold text-stone-900">
               點擊選取或直接將考卷 / 成績圖片拖曳到此處
             </p>
-            <p className="text-xs text-slate-500 mt-1">
+            <p className="text-xs text-stone-500 mt-1">
               支援多選（可一次拖入多張截圖），支援 JPG、PNG、WebP、HEIC 照片
             </p>
           </div>
@@ -459,10 +459,10 @@ export const UploadModal: React.FC<UploadModalProps> = ({
         </div>
 
         {/* 底部動作列 */}
-        <div className="flex items-center justify-between px-6 py-4 border-t border-slate-200 bg-slate-50/50 rounded-b-2xl">
-          <div className="text-xs text-slate-500">
+        <div className="flex items-center justify-between px-6 py-4 border-t border-stone-200 bg-stone-50/60 rounded-b-2xl">
+          <div className="text-xs text-stone-500">
             {allSuccess ? (
-              <span className="text-emerald-600 font-semibold flex items-center gap-1">
+              <span className="text-emerald-700 font-semibold flex items-center gap-1">
                 <CheckCircle2 className="w-4 h-4" />
                 全部圖片已成功歸檔上傳！
               </span>
@@ -481,7 +481,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({
                   onClose();
                 }
               }}
-              className="px-4 py-2 text-xs font-semibold text-slate-700 bg-slate-200/80 hover:bg-slate-300 rounded-xl transition-colors"
+              className="px-4 py-2 text-xs font-semibold text-stone-700 bg-white hover:bg-stone-100 border border-stone-300 rounded-xl transition-colors cursor-pointer"
             >
               {allSuccess ? '✅ 完成並檢視冊子' : '取消'}
             </button>
@@ -490,9 +490,9 @@ export const UploadModal: React.FC<UploadModalProps> = ({
                 type="button"
                 onClick={startUpload}
                 disabled={drafts.length === 0 || isProcessing}
-                className="inline-flex items-center gap-2 px-5 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 rounded-xl shadow-md shadow-indigo-200 transition-all cursor-pointer"
+                className="inline-flex items-center gap-2 px-5 py-2 text-xs font-bold text-white bg-stone-900 hover:bg-stone-800 disabled:opacity-40 rounded-xl shadow-sm transition-all cursor-pointer"
               >
-                <UploadCloud className="w-4 h-4" />
+                <UploadCloud className="w-4 h-4 text-amber-400" />
                 <span>{isProcessing ? '正在歸檔上傳...' : '🚀 開始上傳歸檔'}</span>
               </button>
             )}

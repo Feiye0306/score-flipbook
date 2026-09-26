@@ -194,26 +194,26 @@ export const FlipViewerModal: React.FC<FlipViewerModalProps> = ({
 
   return (
     <div 
-      className="fixed inset-0 z-50 bg-black/95 flex flex-col select-none overflow-hidden"
+      className="fixed inset-0 z-50 bg-[#0F1012]/98 flex flex-col select-none overflow-hidden"
       onMouseUp={handleMouseUp}
     >
       {/* 頂部極簡沉浸工具列 */}
-      <div className="h-14 px-3 sm:px-5 flex items-center justify-between text-white border-b border-white/10 bg-black/60 backdrop-blur-md z-30">
+      <div className="h-14 px-3 sm:px-5 flex items-center justify-between text-white border-b border-white/10 bg-[#16171A]/80 backdrop-blur-md z-30">
         {/* 左側：學生姓名與冊子進度 */}
         <div className="flex items-center gap-2.5">
-          <div className="flex items-center gap-1.5 bg-indigo-600 px-3 py-1 rounded-full text-xs font-bold text-white shadow-sm">
-            <User className="w-3.5 h-3.5" />
+          <div className="flex items-center gap-1.5 bg-stone-800 border border-stone-700 px-3 py-1 rounded-full text-xs font-bold text-stone-100 shadow-sm">
+            <User className="w-3.5 h-3.5 text-amber-400" />
             <span className="max-w-[100px] sm:max-w-none truncate">{currentStudentName}</span>
           </div>
 
           {!isPrivateMode && (
-            <span className="text-[11px] text-slate-400 font-medium hidden sm:inline">
+            <span className="text-[11px] text-stone-400 font-medium hidden sm:inline">
               ({currentStudentIndex + 1} / {studentNames.length} 人)
             </span>
           )}
 
           {/* 頁碼指示膠囊 */}
-          <span className="text-xs text-indigo-200 font-semibold bg-white/10 px-2.5 py-0.5 rounded-full">
+          <span className="text-xs text-amber-300 font-semibold bg-white/10 px-2.5 py-0.5 rounded-full">
             第 {currentPageIndex + 1} / {images.length} 頁
           </span>
         </div>
@@ -224,13 +224,13 @@ export const FlipViewerModal: React.FC<FlipViewerModalProps> = ({
           <button
             type="button"
             onClick={copyBookCollabLink}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-black text-slate-950 bg-emerald-400 hover:bg-emerald-300 rounded-lg shadow-sm transition-all active:scale-95 cursor-pointer whitespace-nowrap"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-stone-950 bg-amber-400 hover:bg-amber-300 rounded-lg shadow-sm transition-all active:scale-95 cursor-pointer whitespace-nowrap"
             title="複製本冊專屬協作連結（他人點開可看圖、可上傳考卷）"
           >
             {copiedType === 'collab' ? (
-              <Check className="w-3.5 h-3.5 text-slate-950" />
+              <Check className="w-3.5 h-3.5 text-stone-950" />
             ) : (
-              <Users className="w-3.5 h-3.5 text-slate-950" />
+              <Users className="w-3.5 h-3.5 text-stone-950" />
             )}
             <span>{copiedType === 'collab' ? '已複製協作連結！' : '👥 分享本冊協作'}</span>
           </button>
@@ -239,7 +239,7 @@ export const FlipViewerModal: React.FC<FlipViewerModalProps> = ({
           <button
             type="button"
             onClick={copyStudentLink}
-            className="hidden sm:inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-indigo-200 bg-indigo-950/80 hover:bg-indigo-900 border border-indigo-700/60 rounded-lg transition-colors cursor-pointer"
+            className="hidden sm:inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-stone-300 bg-stone-800 hover:bg-stone-700 border border-stone-700 rounded-lg transition-colors cursor-pointer"
             title="僅複製此位學生的個人成績連結 (唯讀看圖)"
           >
             {copiedType === 'student' ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Share2 className="w-3.5 h-3.5" />}
@@ -357,7 +357,7 @@ export const FlipViewerModal: React.FC<FlipViewerModalProps> = ({
                 }}
                 className={`transition-all rounded-full ${
                   currentPageIndex === idx
-                    ? 'w-5 h-1.5 bg-indigo-500'
+                    ? 'w-5 h-1.5 bg-amber-400'
                     : 'w-1.5 h-1.5 bg-white/30 hover:bg-white/60'
                 }`}
                 title={`第 ${idx + 1} 頁`}
@@ -374,9 +374,9 @@ export const FlipViewerModal: React.FC<FlipViewerModalProps> = ({
               type="button"
               disabled={!prevStudentName}
               onClick={goToPrevStudent}
-              className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-bold text-white bg-slate-800/90 hover:bg-slate-700 disabled:opacity-30 disabled:pointer-events-none rounded-xl border border-white/10 shadow-sm active:scale-95 transition-all truncate"
+              className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-bold text-stone-200 bg-stone-800/90 hover:bg-stone-700 disabled:opacity-30 disabled:pointer-events-none rounded-xl border border-white/10 shadow-sm active:scale-95 transition-all truncate cursor-pointer"
             >
-              <ChevronLeft className="w-4 h-4 text-indigo-400 flex-shrink-0" />
+              <ChevronLeft className="w-4 h-4 text-amber-400 flex-shrink-0" />
               <span className="truncate">{prevStudentName ? `上一位：${prevStudentName}` : '已是第一位'}</span>
             </button>
           )}
@@ -391,9 +391,9 @@ export const FlipViewerModal: React.FC<FlipViewerModalProps> = ({
                   resetTransform();
                   setCurrentPageIndex(idx);
                 }}
-                className={`h-9 w-12 rounded-md overflow-hidden flex-shrink-0 border transition-all ${
+                className={`h-9 w-12 rounded-md overflow-hidden flex-shrink-0 border transition-all cursor-pointer ${
                   currentPageIndex === idx
-                    ? 'border-indigo-400 scale-105 ring-1 ring-indigo-400'
+                    ? 'border-amber-400 scale-105 ring-1 ring-amber-400'
                     : 'border-white/20 opacity-40 hover:opacity-80'
                 }`}
               >
@@ -412,10 +412,10 @@ export const FlipViewerModal: React.FC<FlipViewerModalProps> = ({
               type="button"
               disabled={!nextStudentName}
               onClick={goToNextStudent}
-              className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-30 disabled:pointer-events-none rounded-xl shadow-md shadow-indigo-900/40 active:scale-95 transition-all truncate"
+              className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-bold text-stone-900 bg-amber-400 hover:bg-amber-300 disabled:opacity-30 disabled:pointer-events-none rounded-xl shadow-md active:scale-95 transition-all truncate cursor-pointer"
             >
               <span className="truncate">{nextStudentName ? `下一位：${nextStudentName}` : '已是最後一位'}</span>
-              <ChevronRight className="w-4 h-4 text-white flex-shrink-0" />
+              <ChevronRight className="w-4 h-4 text-stone-950 flex-shrink-0" />
             </button>
           )}
         </div>

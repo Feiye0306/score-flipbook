@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
 import { 
-  User, 
   Images, 
-  Share2, 
   Trash2, 
-  Check, 
   Eye, 
-  UploadCloud
+  Share2, 
+  UploadCloud, 
+  Check, 
+  User,
+  BookOpen
 } from 'lucide-react';
-import type { ExamBook } from '../types';
+import type { ExamBook, StudentFolder } from '../types';
 
 interface StudentCardListProps {
   currentBook: ExamBook;
@@ -32,11 +33,12 @@ export const StudentCardList: React.FC<StudentCardListProps> = ({
   const [copiedName, setCopiedName] = useState<string | null>(null);
 
   const students = Object.values(currentBook.students || {});
-  
+
   // 搜尋過濾
-  const filteredStudents = students.filter((s) =>
-    s.studentName.toLowerCase().includes(searchQuery.trim().toLowerCase())
-  );
+  const filteredStudents = students.filter((s) => {
+    if (!searchQuery.trim()) return true;
+    return s.studentName.toLowerCase().includes(searchQuery.toLowerCase().trim());
+  });
 
   // 排序：依學生姓名筆畫排序
   filteredStudents.sort((a, b) => a.studentName.localeCompare(b.studentName, 'zh-Hant'));
@@ -55,22 +57,22 @@ export const StudentCardList: React.FC<StudentCardListProps> = ({
 
   if (students.length === 0) {
     return (
-      <div className="text-center py-16 px-4 bg-white rounded-3xl border border-slate-200/80 shadow-sm my-4">
-        <div className="w-16 h-16 mx-auto rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-600 mb-3 shadow-sm border border-indigo-100">
-          <UploadCloud className="w-8 h-8" />
+      <div className="text-center py-16 px-4 bg-white rounded-3xl border border-stone-200/80 shadow-sm my-4">
+        <div className="w-16 h-16 mx-auto rounded-2xl bg-amber-50 flex items-center justify-center text-amber-800 mb-3 shadow-sm border border-amber-200/60">
+          <UploadCloud className="w-8 h-8 text-amber-700" />
         </div>
-        <h3 className="text-base font-bold text-slate-800">
+        <h3 className="text-base font-bold text-stone-900 font-serif">
           冊子「{currentBook.title}」尚無成績截圖
         </h3>
-        <p className="text-xs text-slate-500 max-w-sm mx-auto mt-1 mb-5">
-          直接點擊下方按鈕上傳考卷或成績圖片，系統會自動歸納並排好翻閱順序。
+        <p className="text-xs text-stone-500 max-w-sm mx-auto mt-1 mb-5">
+          直接點擊下方按鈕上傳考卷或成績圖片，系統會自動辨識學生姓名並排好翻閱順序。
         </p>
         <button
           type="button"
           onClick={onOpenUpload}
-          className="inline-flex items-center gap-2 px-6 py-2.5 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-md shadow-indigo-100 transition-all cursor-pointer"
+          className="inline-flex items-center gap-2 px-6 py-2.5 text-xs font-bold text-white bg-stone-900 hover:bg-stone-800 rounded-xl shadow-sm transition-all cursor-pointer"
         >
-          <UploadCloud className="w-4 h-4" />
+          <UploadCloud className="w-4 h-4 text-amber-400" />
           <span>立即上傳成績圖</span>
         </button>
       </div>
@@ -79,7 +81,7 @@ export const StudentCardList: React.FC<StudentCardListProps> = ({
 
   if (filteredStudents.length === 0) {
     return (
-      <div className="text-center py-12 text-slate-400 text-xs">
+      <div className="text-center py-12 text-stone-400 text-xs">
         找不到符合「{searchQuery}」的學生
       </div>
     );
@@ -88,14 +90,14 @@ export const StudentCardList: React.FC<StudentCardListProps> = ({
   return (
     <div className="space-y-3">
       {/* 頂部資訊列 */}
-      <div className="flex items-center justify-between text-xs text-slate-500 px-1">
+      <div className="flex items-center justify-between text-xs text-stone-500 px-1">
         <div className="flex items-center gap-2">
-          <span className="font-bold text-slate-700">學生考卷列表</span>
-          <span className="px-2 py-0.5 bg-indigo-50 text-indigo-700 border border-indigo-200/60 rounded-full font-bold text-[11px]">
+          <span className="font-bold text-stone-800">學生考卷列表</span>
+          <span className="px-2.5 py-0.5 bg-amber-50 text-amber-900 border border-amber-200/80 rounded-full font-bold text-[11px]">
             共 {filteredStudents.length} 人
           </span>
         </div>
-        <span className="text-[11px] text-slate-400">
+        <span className="text-[11px] text-stone-400">
           點卡片開大圖翻閱
         </span>
       </div>
@@ -111,46 +113,46 @@ export const StudentCardList: React.FC<StudentCardListProps> = ({
             <div
               key={student.studentName}
               onClick={() => onOpenViewer(student.studentName, 0)}
-              className="group bg-white rounded-2xl border border-slate-200 hover:border-indigo-400 hover:shadow-md transition-all duration-200 overflow-hidden cursor-pointer flex flex-col active:scale-[0.98]"
+              className="group bg-white rounded-2xl border border-stone-200/90 hover:border-amber-400 hover:shadow-lg transition-all duration-200 overflow-hidden cursor-pointer flex flex-col active:scale-[0.98]"
             >
               {/* 考卷封面預覽 */}
-              <div className="aspect-[4/3] bg-slate-100 relative overflow-hidden flex items-center justify-center">
+              <div className="aspect-[4/3] bg-stone-100 relative overflow-hidden flex items-center justify-center">
                 {firstImage ? (
                   <img
                     src={firstImage.url}
                     alt={student.studentName}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-300 filter brightness-[0.98]"
                     loading="lazy"
                   />
                 ) : (
-                  <div className="text-slate-300 flex flex-col items-center">
+                  <div className="text-stone-300 flex flex-col items-center">
                     <Images className="w-8 h-8 stroke-1" />
                     <span className="text-[10px] mt-1">無截圖</span>
                   </div>
                 )}
 
                 {/* 頁數標籤 */}
-                <div className="absolute top-2 right-2 bg-black/65 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 shadow-sm">
-                  <Images className="w-3 h-3" />
+                <div className="absolute top-2 right-2 bg-stone-900/75 backdrop-blur-sm text-stone-100 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 shadow-sm">
+                  <Images className="w-3 h-3 text-amber-300" />
                   <span>{imageCount} 頁</span>
                 </div>
 
                 {/* 懸浮預覽標籤 */}
-                <div className="absolute inset-0 bg-indigo-950/25 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                  <span className="inline-flex items-center gap-1 px-3 py-1 bg-white/95 text-indigo-700 text-xs font-bold rounded-full shadow-md">
-                    <Eye className="w-3.5 h-3.5" />
+                <div className="absolute inset-0 bg-stone-900/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-white/95 text-stone-900 text-xs font-bold rounded-full shadow-md">
+                    <Eye className="w-3.5 h-3.5 text-amber-600" />
                     翻閱
                   </span>
                 </div>
               </div>
 
-              {/* 姓名與快捷小圖示 */}
-              <div className="p-2.5 flex items-center justify-between gap-1">
+              {/* 底部學生姓名與小動作 */}
+              <div className="p-2.5 sm:p-3 flex items-center justify-between gap-1 bg-white border-t border-stone-100">
                 <div className="flex items-center gap-1.5 min-w-0">
-                  <div className="w-6 h-6 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center flex-shrink-0 text-xs font-bold">
+                  <div className="w-6 h-6 rounded-full bg-stone-100 text-stone-700 flex items-center justify-center flex-shrink-0 text-xs font-bold border border-stone-200">
                     {student.studentName.slice(0, 1)}
                   </div>
-                  <h4 className="font-bold text-slate-800 text-xs truncate">
+                  <h4 className="font-bold text-stone-900 text-xs truncate">
                     {student.studentName}
                   </h4>
                 </div>
@@ -160,10 +162,10 @@ export const StudentCardList: React.FC<StudentCardListProps> = ({
                   <button
                     type="button"
                     onClick={(e) => copyStudentLink(student.studentName, e)}
-                    className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                    className="p-1.5 text-stone-400 hover:text-amber-800 hover:bg-amber-50 rounded-lg transition-colors cursor-pointer"
                     title={isCopied ? '已複製個人專屬連結' : '複製個人專屬連結'}
                   >
-                    {isCopied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Share2 className="w-3.5 h-3.5" />}
+                    {isCopied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Share2 className="w-3.5 h-3.5" />}
                   </button>
 
                   {!isViewOnly && (
@@ -175,7 +177,7 @@ export const StudentCardList: React.FC<StudentCardListProps> = ({
                           onDeleteStudent(student.studentName);
                         }
                       }}
-                      className="p-1.5 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-colors"
+                      className="p-1.5 text-stone-300 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
                       title="刪除此學生"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
