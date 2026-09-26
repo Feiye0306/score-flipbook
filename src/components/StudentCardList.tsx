@@ -127,7 +127,7 @@ export const StudentCardList: React.FC<StudentCardListProps> = ({
             <div
               key={student.studentName}
               onClick={() => onOpenViewer(student.studentName, 0)}
-              className="group bg-[#EBF2F8] rounded-2xl border border-[#D6E1EA] hover:border-[#16202A] hover:shadow-md transition-all duration-200 overflow-hidden cursor-pointer flex flex-col active:scale-[0.98]"
+              className="group bg-[#F1F5F9] rounded-2xl border border-[#D6E1EA] hover:border-[#16202A] hover:shadow-md transition-all duration-200 overflow-hidden cursor-pointer flex flex-col active:scale-[0.98]"
             >
               {/* 圖片封面預覽 */}
               <div className="aspect-[4/3] bg-[#E9EFF4] relative overflow-hidden flex items-center justify-center">
@@ -161,7 +161,7 @@ export const StudentCardList: React.FC<StudentCardListProps> = ({
               </div>
 
               {/* 底部成員姓名與小動作 */}
-              <div className="p-3 flex items-center justify-between gap-1 bg-[#EBF2F8] border-t border-[#D6E1EA]">
+              <div className="p-3 flex items-center justify-between gap-1 bg-[#F1F5F9] border-t border-[#D6E1EA]">
                 <div className="flex items-center gap-2 min-w-0">
                   <div className="w-6 h-6 rounded-full bg-[#E5EDF4] text-[#16202A] flex items-center justify-center flex-shrink-0 text-xs font-bold border border-[#D6E1EA]">
                     {student.studentName.slice(0, 1)}

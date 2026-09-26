@@ -73,7 +73,7 @@ export const Navbar: React.FC<NavbarProps> = ({
         <div className="flex items-center gap-2.5 sm:gap-3.5 min-w-0">
           <div 
             onClick={() => onTabChange?.('shelf')}
-            className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#16202A] flex items-center justify-center text-white shadow-2xs flex-shrink-0 cursor-pointer hover:bg-[#233140] transition-colors"
+            className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#8A5638] hover:bg-[#73452B] flex items-center justify-center text-white shadow-2xs flex-shrink-0 cursor-pointer transition-colors"
             title="回到圖冊陳列相冊"
           >
             <BookOpen className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -83,9 +83,9 @@ export const Navbar: React.FC<NavbarProps> = ({
             <div className="flex items-center gap-2">
               <h1 
                 onClick={() => onTabChange?.('shelf')}
-                className="font-extrabold text-[#16202A] text-sm sm:text-base leading-tight flex items-center gap-1 font-serif cursor-pointer hover:text-stone-600 transition-colors truncate"
+                className="font-extrabold text-[#8A5638] text-base sm:text-lg leading-tight flex items-center gap-1 font-sans tracking-tight cursor-pointer hover:opacity-80 transition-opacity truncate"
               >
-                雲端圖文翻閱冊
+                圖文翻閱冊
               </h1>
 
               {/* 雲端同步狀態標籤 */}
@@ -125,28 +125,20 @@ export const Navbar: React.FC<NavbarProps> = ({
               </button>
             </div>
 
-            {/* 書架 vs 當前冊子 導航標籤（未進入冊子時不顯示冊名） */}
-            {!isSingleBookMode && (
+            {/* 僅在進入單冊時顯示返回導航 */}
+            {!isSingleBookMode && activeTab === 'book' && (
               <div className="flex items-center gap-1.5 mt-0.5">
-                {activeTab === 'shelf' ? (
-                  <span className="text-[10px] sm:text-[11px] font-bold text-stone-600 bg-stone-100 px-2 py-0.5 rounded">
-                    📚 圖冊書架 (共 {books.length} 冊)
-                  </span>
-                ) : (
-                  <>
-                    <button
-                      type="button"
-                      onClick={() => onTabChange?.('shelf')}
-                      className="text-[10px] sm:text-[11px] font-bold text-stone-500 hover:text-stone-900 px-1 py-0.5 rounded transition-colors cursor-pointer flex items-center gap-0.5"
-                    >
-                      ← 返回書架
-                    </button>
-                    <span className="text-stone-300 text-[10px]">/</span>
-                    <span className="text-[10px] sm:text-[11px] font-bold text-amber-900 bg-amber-50 px-1.5 py-0.5 rounded truncate max-w-[120px] sm:max-w-[200px]">
-                      {currentBook?.title || '當前圖冊'}
-                    </span>
-                  </>
-                )}
+                <button
+                  type="button"
+                  onClick={() => onTabChange?.('shelf')}
+                  className="text-[10px] sm:text-[11px] font-bold text-stone-500 hover:text-stone-900 px-1 py-0.5 rounded transition-colors cursor-pointer flex items-center gap-0.5"
+                >
+                  ← 返回書架
+                </button>
+                <span className="text-stone-300 text-[10px]">/</span>
+                <span className="text-[10px] sm:text-[11px] font-bold text-[#8A5638] bg-[#8A5638]/10 px-1.5 py-0.5 rounded truncate max-w-[120px] sm:max-w-[200px]">
+                  {currentBook?.title || '當前圖冊'}
+                </span>
               </div>
             )}
           </div>

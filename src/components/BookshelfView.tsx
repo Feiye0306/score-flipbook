@@ -163,6 +163,16 @@ export const BookshelfView: React.FC<BookshelfViewProps> = ({
   const [quickListBook, setQuickListBook] = useState<ExamBook | null>(null);
   const [downloadProgress, setDownloadProgress] = useState<string | null>(null);
 
+  // 下載進度更新 (完成時 3 秒自動隱藏)
+  const handleUpdateProgress = (text: string) => {
+    setDownloadProgress(text);
+    if (text.includes('完成') || text.includes('結束')) {
+      setTimeout(() => {
+        setDownloadProgress((prev) => (prev === text ? null : prev));
+      }, 3000);
+    }
+  };
+
   return (
     <div className="space-y-6 animate-in fade-in duration-200">
 
@@ -191,7 +201,7 @@ export const BookshelfView: React.FC<BookshelfViewProps> = ({
 
       {/* ── 空狀態 ── */}
       {books.length === 0 ? (
-        <div className="text-center py-20 px-6 bg-[#EBF2F8] rounded-3xl border border-[#D6E1EA] shadow-2xs">
+        <div className="text-center py-20 px-6 bg-[#F1F5F9] rounded-3xl border border-[#D6E1EA] shadow-2xs">
           <div className="w-16 h-16 rounded-2xl bg-white flex items-center justify-center mx-auto mb-4 border border-[#D6E1EA]">
             <BookOpen className="w-8 h-8 text-[#16202A]" />
           </div>
@@ -234,7 +244,7 @@ export const BookshelfView: React.FC<BookshelfViewProps> = ({
             return (
               <div
                 key={book.id}
-                className={`group relative bg-[#EBF2F8] rounded-3xl border transition-all duration-300 flex flex-col overflow-hidden hover:-translate-y-1 hover:shadow-xl ${
+                className={`group relative bg-[#F1F5F9] rounded-3xl border transition-all duration-300 flex flex-col overflow-hidden hover:-translate-y-1 hover:shadow-xl ${
                   isCurrent
                     ? 'border-[#16202A] shadow-md ring-2 ring-[#16202A]/10'
                     : 'border-[#D6E1EA] shadow-2xs hover:border-[#16202A]'
@@ -258,36 +268,30 @@ export const BookshelfView: React.FC<BookshelfViewProps> = ({
                     )}
                   </div>
 
-                  {/* 標題資訊 */}
+                  {/* 標題資訊：書名置頂，大氣排版 */}
                   <div className="flex-1 min-w-0 pt-0.5">
-                    {/* 分類標籤：皮革焦糖暖棕 */}
-                    <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-[11px] font-bold bg-[#8A5638] text-white shadow-2xs mb-2">
-                      <BookOpen className="w-3 h-3 text-white" />
-                      <span>圖文冊</span>
-                    </span>
-
-                    {/* 書名：深海軍黑優雅襯線體 */}
-                    <h3 className="font-serif font-black text-[#16202A] text-lg sm:text-xl leading-snug line-clamp-2 group-hover:text-[#233140] transition-colors mb-2.5">
+                    {/* 書名：現代人文幾何黑體，無襯線大氣有力 */}
+                    <h3 className="font-sans font-black text-[#16202A] text-lg sm:text-xl leading-snug line-clamp-2 tracking-tight group-hover:text-[#8A5638] transition-colors mb-2.5">
                       {book.title}
                     </h3>
 
-                    {/* 統計：皮革色、字大一號 */}
-                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm font-bold text-[#8A5638]">
+                    {/* 統計：海軍深藍、字形統一 */}
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm font-bold text-[#16202A] font-sans">
                       <span className="flex items-center gap-1.5">
-                        <Users className="w-4 h-4 text-[#8A5638]" />
+                        <Users className="w-4 h-4 text-[#16202A]" />
                         {studentCount} 位成員
                       </span>
                       <span className="flex items-center gap-1.5">
-                        <Image className="w-4 h-4 text-[#8A5638]" />
+                        <Image className="w-4 h-4 text-[#16202A]" />
                         {totalPages} 張圖
                       </span>
                     </div>
                   </div>
                 </div>
 
-                {/* 修訂時間：皮革色、字大一號 */}
-                <div className="px-5 sm:px-6 pb-3.5 flex items-center gap-1.5 text-sm font-medium text-[#8A5638]">
-                  <Calendar className="w-4 h-4 flex-shrink-0 text-[#8A5638]" />
+                {/* 修訂時間：海軍深藍、字形統一 */}
+                <div className="px-5 sm:px-6 pb-3.5 flex items-center gap-1.5 text-sm font-medium text-[#16202A] font-sans">
+                  <Calendar className="w-4 h-4 flex-shrink-0 text-[#16202A]" />
                   <span>修訂於 {formatUpdateTime(book.updatedAt || book.createdAt)}</span>
                 </div>
 
@@ -308,7 +312,7 @@ export const BookshelfView: React.FC<BookshelfViewProps> = ({
                     <ArrowRight className="w-4.5 h-4.5 text-white/70 group-hover:translate-x-0.5 transition-transform" />
                   </button>
 
-                  {/* 次要按鈕列：字與 icon 放大 */}
+                  {/* 次要按鈕列 */}
                   <div className="flex items-center gap-2">
                     {/* 名單確認 */}
                     <button
@@ -330,21 +334,21 @@ export const BookshelfView: React.FC<BookshelfViewProps> = ({
                       <span>分享</span>
                     </button>
 
-                    {/* 下載 */}
+                    {/* 下載 (小一號：w-9 h-9，icon w-3.5 h-3.5) */}
                     <button
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
-                        downloadBookImages(book, setDownloadProgress);
+                        downloadBookImages(book, handleUpdateProgress);
                       }}
                       disabled={totalPages === 0}
-                      className="inline-flex items-center justify-center w-10 h-10 text-[#16202A] bg-white hover:bg-stone-50 border border-[#D6E1EA] hover:border-[#16202A] rounded-full transition-all cursor-pointer disabled:opacity-30 shadow-2xs flex-shrink-0"
+                      className="inline-flex items-center justify-center w-9 h-9 text-[#16202A] bg-white hover:bg-stone-50 border border-[#D6E1EA] hover:border-[#16202A] rounded-full transition-all cursor-pointer disabled:opacity-30 shadow-2xs flex-shrink-0"
                       title="打包下載全冊圖片"
                     >
-                      <Download className="w-4.5 h-4.5 text-[#16202A]" />
+                      <Download className="w-3.5 h-3.5 text-[#16202A]" />
                     </button>
 
-                    {/* 刪除 */}
+                    {/* 刪除 (小一號：w-9 h-9，icon w-3.5 h-3.5) */}
                     {books.length > 1 && !isViewOnly && (
                       <button
                         type="button"
@@ -353,10 +357,10 @@ export const BookshelfView: React.FC<BookshelfViewProps> = ({
                             onDeleteBook(book.id);
                           }
                         }}
-                        className="inline-flex items-center justify-center w-10 h-10 text-stone-400 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors cursor-pointer border border-[#D6E1EA] flex-shrink-0"
+                        className="inline-flex items-center justify-center w-9 h-9 text-stone-400 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors cursor-pointer border border-[#D6E1EA] flex-shrink-0"
                         title="刪除此冊"
                       >
-                        <Trash2 className="w-4.5 h-4.5" />
+                        <Trash2 className="w-3.5 h-3.5" />
                       </button>
                     )}
                   </div>
@@ -369,15 +373,15 @@ export const BookshelfView: React.FC<BookshelfViewProps> = ({
           {!isViewOnly && (
             <div
               onClick={onCreateBookClick}
-              className="group min-h-[220px] rounded-3xl border-2 border-dashed border-[#D6E1EA] hover:border-[#8A5638] bg-[#EBF2F8]/70 hover:bg-[#EBF2F8] transition-all duration-300 flex flex-col items-center justify-center p-6 text-center cursor-pointer shadow-2xs"
+              className="group min-h-[220px] rounded-3xl border-2 border-dashed border-[#D6E1EA] hover:border-[#8A5638] bg-[#F1F5F9]/80 hover:bg-[#F1F5F9] transition-all duration-300 flex flex-col items-center justify-center p-6 text-center cursor-pointer shadow-2xs"
             >
               <div className="w-12 h-12 rounded-full bg-white border border-[#D6E1EA] group-hover:border-[#8A5638] group-hover:scale-105 flex items-center justify-center text-[#8A5638] shadow-2xs transition-all duration-200 mb-3">
                 <Plus className="w-6 h-6 text-[#8A5638]" />
               </div>
-              <h4 className="font-bold text-[#16202A] text-sm mb-1">
+              <h4 className="font-bold text-[#16202A] text-sm mb-1 font-sans">
                 建立新圖文冊
               </h4>
-              <p className="text-xs text-[#8A5638] max-w-[180px] leading-relaxed">
+              <p className="text-xs text-[#8A5638] max-w-[180px] leading-relaxed font-sans">
                 新增另一本考卷相冊，獨立管理分類
               </p>
             </div>
@@ -446,7 +450,7 @@ export const BookshelfView: React.FC<BookshelfViewProps> = ({
                             type="button"
                             onClick={(e) => {
                               e.stopPropagation();
-                              downloadPersonImages(personName, folder?.images || [], setDownloadProgress);
+                              downloadPersonImages(personName, folder?.images || [], handleUpdateProgress);
                             }}
                             disabled={imgCount === 0}
                             className="p-1.5 text-stone-500 hover:text-stone-800 hover:bg-stone-200 rounded-lg transition-colors cursor-pointer disabled:opacity-30"
@@ -475,7 +479,7 @@ export const BookshelfView: React.FC<BookshelfViewProps> = ({
             <div className="p-4 border-t border-stone-200 flex items-center justify-between gap-3 flex-shrink-0">
               <button
                 type="button"
-                onClick={() => downloadBookImages(quickListBook, setDownloadProgress)}
+                onClick={() => downloadBookImages(quickListBook, handleUpdateProgress)}
                 className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-stone-800 bg-stone-200 hover:bg-stone-300 rounded-xl transition-colors cursor-pointer"
               >
                 <Download className="w-4 h-4" />
@@ -497,11 +501,16 @@ export const BookshelfView: React.FC<BookshelfViewProps> = ({
         </div>
       )}
 
-      {/* ── 下載進度 Toast ── */}
+      {/* ── 下載進度 Toast (完成時自動消失 + 可手動關閉) ── */}
       {downloadProgress && (
-        <div className="fixed bottom-5 right-5 z-50 bg-stone-900 text-white px-4 py-2.5 rounded-xl shadow-xl flex items-center gap-2 text-sm animate-in slide-in-from-bottom duration-200">
-          <FileDown className="w-4 h-4 text-amber-400 animate-pulse" />
+        <div 
+          onClick={() => setDownloadProgress(null)}
+          className="fixed bottom-5 right-5 z-50 bg-[#16202A] text-white px-4 py-2.5 rounded-2xl shadow-xl flex items-center gap-2.5 text-xs sm:text-sm border border-white/10 animate-in slide-in-from-bottom duration-200 cursor-pointer hover:bg-[#202E3D] transition-colors"
+          title="點擊關閉提示"
+        >
+          <FileDown className="w-4 h-4 text-[#8A5638] animate-pulse" />
           <span>{downloadProgress}</span>
+          <span className="text-[10px] text-white/50 ml-1">✕</span>
         </div>
       )}
     </div>

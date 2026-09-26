@@ -18,6 +18,7 @@ import { FlipViewerModal } from './components/FlipViewerModal';
 import { StudentPrivateView } from './components/StudentPrivateView';
 import { ShareModal } from './components/ShareModal';
 import { FirebaseGuideModal } from './components/FirebaseGuideModal';
+import { CreateBookModal } from './components/CreateBookModal';
 import { BookOpen, UploadCloud, Users, ArrowLeft, Download, Loader2, ShieldCheck, ShieldAlert, Calendar, ArrowRight } from 'lucide-react';
 import { downloadBookImages } from './utils/zipExporter';
 
@@ -34,6 +35,7 @@ export const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'shelf' | 'book'>('shelf');
 
   // 彈窗與模式控制
+  const [isCreateBookOpen, setIsCreateBookOpen] = useState(false);
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [shareModalBook, setShareModalBook] = useState<ExamBook | null>(null);
@@ -319,12 +321,7 @@ export const App: React.FC = () => {
               setShareModalBook(book);
               setIsShareModalOpen(true);
             }}
-            onCreateBookClick={() => {
-              const title = prompt('請輸入新冊子名稱（例如：活動照片集、圖文翻閱冊）：');
-              if (title && title.trim()) {
-                handleCreateBook(title.trim());
-              }
-            }}
+            onCreateBookClick={() => setIsCreateBookOpen(true)}
             onDeleteBook={handleDeleteBook}
             isViewOnly={isViewOnly}
           />
@@ -332,7 +329,7 @@ export const App: React.FC = () => {
           /* 【單冊名單管理模式】：Murmurs 雜誌高級感看板 + 學生卡片清單 */
           <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-150">
             {/* 冊子資訊看板 (大氣排版、超大標題、呼吸留白) */}
-            <div className="bg-[#EBF2F8] rounded-3xl border border-[#D6E1EA] p-6 sm:p-8 shadow-xs flex flex-col lg:flex-row lg:items-end justify-between gap-6">
+            <div className="bg-[#F1F5F9] rounded-3xl border border-[#D6E1EA] p-6 sm:p-8 shadow-xs flex flex-col lg:flex-row lg:items-end justify-between gap-6">
               <div className="space-y-2 max-w-2xl">
                 {/* 頂部精緻麵包屑導航 */}
                 <div className="flex items-center gap-2">
@@ -537,6 +534,13 @@ export const App: React.FC = () => {
           onClose={() => setViewerStudent(null)}
         />
       )}
+
+      {/* 建立新圖冊彈窗 */}
+      <CreateBookModal
+        isOpen={isCreateBookOpen}
+        onClose={() => setIsCreateBookOpen(false)}
+        onCreateBook={handleCreateBook}
+      />
     </div>
   );
 };
