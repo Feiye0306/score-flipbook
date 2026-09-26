@@ -12,7 +12,8 @@ import { StudentCardList } from './components/StudentCardList';
 import { UploadModal } from './components/UploadModal';
 import { FlipViewerModal } from './components/FlipViewerModal';
 import { StudentPrivateView } from './components/StudentPrivateView';
-import { BookOpen, Sparkles, UploadCloud, Layers } from 'lucide-react';
+import { ShareModal } from './components/ShareModal';
+import { BookOpen, Sparkles, UploadCloud, Layers, Users } from 'lucide-react';
 
 export const App: React.FC = () => {
   const [books, setBooks] = useState<ExamBook[]>([]);
@@ -21,6 +22,7 @@ export const App: React.FC = () => {
   
   // 彈窗與模式控制
   const [isUploadOpen, setIsUploadOpen] = useState(false);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [viewerStudent, setViewerStudent] = useState<string | null>(null);
   const [viewerPageIndex, setViewerPageIndex] = useState(0);
   const [isViewOnly, setIsViewOnly] = useState(false);
@@ -182,6 +184,7 @@ export const App: React.FC = () => {
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
         onOpenUpload={() => setIsUploadOpen(true)}
+        onOpenShare={() => setIsShareModalOpen(true)}
         isViewOnly={isViewOnly}
         isSingleBookMode={isSingleBookMode}
       />
@@ -210,18 +213,29 @@ export const App: React.FC = () => {
                 </p>
               </div>
 
-              {!isViewOnly && (
-                <div className="flex items-center gap-2 pt-1 sm:pt-0">
+              {/* 橫幅主要動作區：分享協作 與 上傳 */}
+              <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 pt-1 sm:pt-0">
+                <button
+                  type="button"
+                  onClick={() => setIsShareModalOpen(true)}
+                  className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-4 py-2.5 text-xs font-black bg-emerald-400 hover:bg-emerald-300 text-slate-950 rounded-xl shadow-lg shadow-emerald-950/20 transition-all active:scale-95 cursor-pointer whitespace-nowrap"
+                  title="產生本冊專屬連結，發給他人一起看圖與上傳"
+                >
+                  <Users className="w-4 h-4 text-slate-950" />
+                  <span>👥 分享本冊協作 (他人可看可上傳)</span>
+                </button>
+
+                {!isViewOnly && (
                   <button
                     type="button"
                     onClick={() => setIsUploadOpen(true)}
-                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2 sm:py-2.5 text-xs font-bold bg-white text-indigo-700 hover:bg-indigo-50 rounded-xl shadow-md transition-all active:scale-95 cursor-pointer whitespace-nowrap"
+                    className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-4 py-2.5 text-xs font-bold bg-white text-indigo-700 hover:bg-indigo-50 rounded-xl shadow-md transition-all active:scale-95 cursor-pointer whitespace-nowrap"
                   >
                     <UploadCloud className="w-4 h-4 text-indigo-600" />
-                    <span>上傳本冊成績截圖</span>
+                    <span>上傳成績截圖</span>
                   </button>
-                </div>
-              )}
+                )}
+              </div>
             </div>
 
             {/* 學生卡片清單 */}
@@ -247,6 +261,15 @@ export const App: React.FC = () => {
           </div>
         )}
       </main>
+
+      {/* 冊子專屬分享視窗 (協作/唯讀) */}
+      {currentBook && (
+        <ShareModal
+          currentBook={currentBook}
+          isOpen={isShareModalOpen}
+          onClose={() => setIsShareModalOpen(false)}
+        />
+      )}
 
       {/* 上傳彈窗 */}
       {currentBook && (

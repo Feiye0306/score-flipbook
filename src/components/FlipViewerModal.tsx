@@ -169,15 +169,27 @@ export const FlipViewerModal: React.FC<FlipViewerModalProps> = ({
     }
   };
 
-  // 複製學生專屬連結
+  const [copiedType, setCopiedType] = useState<'collab' | 'student' | null>(null);
+
+  // 複製本冊協作連結 (他人可看圖 + 可上傳)
+  const copyBookCollabLink = () => {
+    const url = new URL(window.location.origin + window.location.pathname);
+    const code = currentBook.shareCode || currentBook.id;
+    url.searchParams.set('share', code);
+    navigator.clipboard.writeText(url.toString());
+    setCopiedType('collab');
+    setTimeout(() => setCopiedType(null), 2000);
+  };
+
+  // 複製單一學生個人專屬連結 (唯讀看圖)
   const copyStudentLink = () => {
     const url = new URL(window.location.origin + window.location.pathname);
     const code = currentBook.shareCode || currentBook.id;
     url.searchParams.set('share', code);
     url.searchParams.set('student', currentStudentName);
     navigator.clipboard.writeText(url.toString());
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    setCopiedType('student');
+    setTimeout(() => setCopiedType(null), 2000);
   };
 
   return (
@@ -208,15 +220,30 @@ export const FlipViewerModal: React.FC<FlipViewerModalProps> = ({
 
         {/* 右側快捷動作 (去蕪存菁，避免臃腫) */}
         <div className="flex items-center gap-1.5 sm:gap-2">
+          {/* 複製整冊協作分享連結 (他人可看可上傳) */}
+          <button
+            type="button"
+            onClick={copyBookCollabLink}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-black text-slate-950 bg-emerald-400 hover:bg-emerald-300 rounded-lg shadow-sm transition-all active:scale-95 cursor-pointer whitespace-nowrap"
+            title="複製本冊專屬協作連結（他人點開可看圖、可上傳考卷）"
+          >
+            {copiedType === 'collab' ? (
+              <Check className="w-3.5 h-3.5 text-slate-950" />
+            ) : (
+              <Users className="w-3.5 h-3.5 text-slate-950" />
+            )}
+            <span>{copiedType === 'collab' ? '已複製協作連結！' : '👥 分享本冊協作'}</span>
+          </button>
+
           {/* 複製個人專屬連結 */}
           <button
             type="button"
             onClick={copyStudentLink}
-            className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-indigo-200 bg-indigo-950/80 hover:bg-indigo-900 border border-indigo-700/60 rounded-lg transition-colors"
-            title="複製此學生的專屬分享連結"
+            className="hidden sm:inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-indigo-200 bg-indigo-950/80 hover:bg-indigo-900 border border-indigo-700/60 rounded-lg transition-colors cursor-pointer"
+            title="僅複製此位學生的個人成績連結 (唯讀看圖)"
           >
-            {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Share2 className="w-3.5 h-3.5" />}
-            <span className="hidden md:inline">{copied ? '已複製' : '個人連結'}</span>
+            {copiedType === 'student' ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Share2 className="w-3.5 h-3.5" />}
+            <span>{copiedType === 'student' ? '已複製' : '個人唯讀連結'}</span>
           </button>
 
           {/* 順時針旋轉 90° */}
