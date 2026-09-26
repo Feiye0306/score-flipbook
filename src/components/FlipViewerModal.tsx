@@ -225,11 +225,11 @@ export const FlipViewerModal: React.FC<FlipViewerModalProps> = ({
   return (
     <div 
       className="fixed inset-0 z-50 flex flex-col select-none overflow-hidden"
-      style={{ backgroundColor: '#111215' }} // 100% 實心深色遮罩，徹底杜絕透光與重疊干擾
+      style={{ backgroundColor: '#0E141B' }} // 深海軍藍黑 100% 實心遮罩，沉浸專注
       onMouseUp={handleMouseUp}
     >
       {/* 頂部極簡沉浸工具列 */}
-      <div className="h-14 px-3 sm:px-5 flex items-center justify-between text-white border-b border-white/10 bg-[#16171B] z-30 flex-shrink-0">
+      <div className="h-14 px-3 sm:px-5 flex items-center justify-between text-white border-b border-white/10 bg-[#16202A] z-30 flex-shrink-0">
         {/* 左側：冊子名稱 + 學生目錄展開鈕 + 當前學生資訊 */}
         <div className="flex items-center gap-2 sm:gap-3 min-w-0">
           {/* 冊子名稱標題 */}
@@ -415,10 +415,10 @@ export const FlipViewerModal: React.FC<FlipViewerModalProps> = ({
             type="button"
             onClick={goToPrevPage}
             disabled={currentPageIndex === 0 && !prevStudentName}
-            className="absolute left-2 sm:left-4 z-20 w-11 h-11 sm:w-13 sm:h-13 rounded-full bg-stone-900/80 hover:bg-stone-800 disabled:opacity-20 disabled:pointer-events-none text-white flex items-center justify-center border border-white/20 shadow-2xl transition-all hover:scale-105 active:scale-95 cursor-pointer"
+            className="absolute left-2 sm:left-4 z-20 w-11 h-11 sm:w-13 sm:h-13 rounded-full bg-[#16202A]/85 hover:bg-[#202E3D] disabled:opacity-20 disabled:pointer-events-none text-white flex items-center justify-center border border-white/15 shadow-2xl transition-all hover:scale-105 active:scale-95 cursor-pointer"
             title="上一頁 (左方向鍵)"
           >
-            <ChevronLeft className="w-7 h-7 text-amber-300" />
+            <ChevronLeft className="w-7 h-7 text-[#D8CEBC]" />
           </button>
 
           {/* 考卷圖片主體 */}
@@ -451,16 +451,16 @@ export const FlipViewerModal: React.FC<FlipViewerModalProps> = ({
             type="button"
             onClick={goToNextPage}
             disabled={currentPageIndex >= images.length - 1 && !nextStudentName}
-            className="absolute right-2 sm:right-4 z-20 w-11 h-11 sm:w-13 sm:h-13 rounded-full bg-stone-900/80 hover:bg-stone-800 disabled:opacity-20 disabled:pointer-events-none text-white flex items-center justify-center border border-white/20 shadow-2xl transition-all hover:scale-105 active:scale-95 cursor-pointer"
+            className="absolute right-2 sm:right-4 z-20 w-11 h-11 sm:w-13 sm:h-13 rounded-full bg-[#16202A]/85 hover:bg-[#202E3D] disabled:opacity-20 disabled:pointer-events-none text-white flex items-center justify-center border border-white/15 shadow-2xl transition-all hover:scale-105 active:scale-95 cursor-pointer"
             title="下一頁 (右方向鍵)"
           >
-            <ChevronRight className="w-7 h-7 text-amber-300" />
+            <ChevronRight className="w-7 h-7 text-[#D8CEBC]" />
           </button>
         </div>
       </div>
 
       {/* 底部功能 Dock */}
-      <div className="bg-[#16171B] border-t border-white/10 px-3 sm:px-6 py-2.5 flex flex-col gap-2 z-30 flex-shrink-0">
+      <div className="bg-[#16202A] border-t border-white/10 px-3 sm:px-6 py-2.5 flex flex-col gap-2 z-30 flex-shrink-0">
         {/* 多頁指示器小圓點 */}
         {images.length > 1 && (
           <div className="flex items-center justify-center gap-1.5 py-0.5">
@@ -474,7 +474,7 @@ export const FlipViewerModal: React.FC<FlipViewerModalProps> = ({
                 }}
                 className={`transition-all rounded-full cursor-pointer ${
                   currentPageIndex === idx
-                    ? 'w-5 h-1.5 bg-amber-400'
+                    ? 'w-5 h-1.5 bg-[#D8CEBC]'
                     : 'w-1.5 h-1.5 bg-white/30 hover:bg-white/60'
                 }`}
                 title={`第 ${idx + 1} 頁`}
@@ -491,9 +491,9 @@ export const FlipViewerModal: React.FC<FlipViewerModalProps> = ({
               type="button"
               disabled={!prevStudentName}
               onClick={goToPrevStudent}
-              className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-bold text-stone-200 bg-stone-800/90 hover:bg-stone-700 disabled:opacity-30 disabled:pointer-events-none rounded-xl border border-white/10 shadow-sm active:scale-95 transition-all truncate cursor-pointer"
+              className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-bold text-[#D8CEBC] bg-[#1E293B]/90 hover:bg-[#2A374A] disabled:opacity-30 disabled:pointer-events-none rounded-xl border border-white/10 shadow-sm active:scale-95 transition-all truncate cursor-pointer"
             >
-              <ChevronLeft className="w-4 h-4 text-amber-400 flex-shrink-0" />
+              <ChevronLeft className="w-4 h-4 text-[#D8CEBC] flex-shrink-0" />
               <span className="truncate">{prevStudentName ? `上一位：${prevStudentName}` : '已是第一位'}</span>
             </button>
           )}
@@ -510,7 +510,7 @@ export const FlipViewerModal: React.FC<FlipViewerModalProps> = ({
                 }}
                 className={`h-9 w-12 rounded-md overflow-hidden flex-shrink-0 border transition-all cursor-pointer ${
                   currentPageIndex === idx
-                    ? 'border-amber-400 scale-105 ring-1 ring-amber-400'
+                    ? 'border-[#D8CEBC] scale-105 ring-1 ring-[#D8CEBC]'
                     : 'border-white/20 opacity-40 hover:opacity-80'
                 }`}
               >
@@ -529,10 +529,10 @@ export const FlipViewerModal: React.FC<FlipViewerModalProps> = ({
               type="button"
               disabled={!nextStudentName}
               onClick={goToNextStudent}
-              className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-bold text-stone-900 bg-amber-400 hover:bg-amber-300 disabled:opacity-30 disabled:pointer-events-none rounded-xl shadow-md active:scale-95 transition-all truncate cursor-pointer"
+              className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-bold text-[#16202A] bg-[#D8CEBC] hover:bg-[#C9BCA6] disabled:opacity-30 disabled:pointer-events-none rounded-xl shadow-md active:scale-95 transition-all truncate cursor-pointer"
             >
               <span className="truncate">{nextStudentName ? `下一位：${nextStudentName}` : '已是最後一位'}</span>
-              <ChevronRight className="w-4 h-4 text-stone-950 flex-shrink-0" />
+              <ChevronRight className="w-4 h-4 text-[#16202A] flex-shrink-0" />
             </button>
           )}
         </div>

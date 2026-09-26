@@ -332,7 +332,7 @@ export const App: React.FC = () => {
           /* 【單冊名單管理模式】：Murmurs 雜誌高級感看板 + 學生卡片清單 */
           <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-150">
             {/* 冊子資訊看板 (大氣排版、超大標題、呼吸留白) */}
-            <div className="bg-[#F6F9FB] rounded-3xl border border-[#D6E1EA] p-6 sm:p-8 shadow-xs flex flex-col lg:flex-row lg:items-end justify-between gap-6">
+            <div className="bg-[#EBF2F8] rounded-3xl border border-[#D6E1EA] p-6 sm:p-8 shadow-xs flex flex-col lg:flex-row lg:items-end justify-between gap-6">
               <div className="space-y-2 max-w-2xl">
                 {/* 頂部精緻麵包屑導航 */}
                 <div className="flex items-center gap-2">
@@ -455,10 +455,10 @@ export const App: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => setIsUploadOpen(true)}
-                      className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-5 py-2.5 text-xs font-bold text-white bg-stone-900 hover:bg-stone-800 rounded-xl shadow-sm transition-all active:scale-95 cursor-pointer whitespace-nowrap"
+                      className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-5 py-2.5 text-xs sm:text-sm font-bold text-white bg-[#8A5638] hover:bg-[#73452B] rounded-full shadow-sm transition-all active:scale-95 cursor-pointer whitespace-nowrap"
                     >
-                      <UploadCloud className="w-4 h-4 text-amber-400" />
-                      <span>🚀 立即上傳圖片</span>
+                      <UploadCloud className="w-4 h-4 text-white" />
+                      <span>＋ 立即上傳圖片</span>
                     </button>
 
                     <button
@@ -467,9 +467,9 @@ export const App: React.FC = () => {
                         setShareModalBook(currentBook);
                         setIsShareModalOpen(true);
                       }}
-                      className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 text-xs font-bold text-amber-900 bg-amber-50 hover:bg-amber-100 border border-amber-200/80 rounded-xl shadow-sm transition-all cursor-pointer whitespace-nowrap"
+                      className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 text-xs sm:text-sm font-bold text-[#16202A] bg-white hover:bg-stone-50 border border-[#D6E1EA] hover:border-[#16202A] rounded-full shadow-2xs transition-all cursor-pointer whitespace-nowrap"
                     >
-                      <Users className="w-4 h-4 text-amber-700" />
+                      <Users className="w-4 h-4 text-[#16202A]" />
                       <span>分享本冊</span>
                     </button>
                   </div>
@@ -519,6 +519,8 @@ export const App: React.FC = () => {
       {currentBook && (
         <UploadModal
           currentBook={currentBook}
+          books={books}
+          onSelectBook={(id) => setCurrentBookId(id)}
           isOpen={isUploadOpen}
           onClose={() => setIsUploadOpen(false)}
           onUploadComplete={handleUploadComplete}
