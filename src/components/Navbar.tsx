@@ -74,7 +74,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           <div 
             onClick={() => onTabChange?.('shelf')}
             className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-stone-900 border border-stone-800 flex items-center justify-center text-amber-400 shadow-sm flex-shrink-0 cursor-pointer hover:bg-stone-800 transition-colors"
-            title="回到成績冊陳列書架"
+            title="回到圖冊陳列書架"
           >
             <BookOpen className="w-4 h-4 sm:w-5 sm:h-5" />
           </div>
@@ -85,31 +85,35 @@ export const Navbar: React.FC<NavbarProps> = ({
                 onClick={() => onTabChange?.('shelf')}
                 className="font-bold text-stone-900 text-sm sm:text-lg leading-tight flex items-center gap-1 font-serif cursor-pointer hover:text-amber-800 transition-colors truncate"
               >
-                成績翻閱冊
+                雲端圖文翻閱冊
               </h1>
 
               {/* 雲端同步狀態標籤 */}
               <button
                 type="button"
                 onClick={onOpenCloudGuide}
-                className={`inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-medium px-2 py-0.5 rounded-full flex-shrink-0 cursor-pointer ${
+                className={`inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-medium px-2 py-0.5 rounded-full flex-shrink-0 cursor-pointer transition-all hover:shadow-xs active:scale-95 ${
                   isCloudPermissionDenied
-                    ? 'bg-amber-100 text-amber-900 border border-amber-300'
+                    ? 'bg-amber-100 text-amber-900 border border-amber-300 hover:bg-amber-200'
                     : isFirebaseConfigured
                     ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
                     : 'bg-stone-100 text-stone-700 border border-stone-200'
                 }`}
-                title="點擊查看雲端同步與權限設定"
+                title={
+                  isCloudPermissionDenied
+                    ? "目前資料暫存於此電腦瀏覽器。點擊查看如何開通雲端以供手機跨裝置同步分享。"
+                    : "雲端同步狀態"
+                }
               >
                 {isCloudPermissionDenied ? (
                   <>
-                    <AlertTriangle className="w-3 h-3 text-amber-700 animate-bounce" />
-                    <span>本機暫存中</span>
+                    <AlertTriangle className="w-3 h-3 text-amber-700" />
+                    <span>本機暫存 (點擊設定雲端)</span>
                   </>
                 ) : isFirebaseConfigured ? (
                   <>
                     <Cloud className="w-3 h-3 text-emerald-600 animate-pulse" />
-                    <span className="hidden sm:inline">雲端同步</span>
+                    <span className="hidden sm:inline">雲端同步中</span>
                     <span className="sm:hidden">雲端</span>
                   </>
                 ) : (
@@ -121,34 +125,26 @@ export const Navbar: React.FC<NavbarProps> = ({
               </button>
             </div>
 
-            {/* 書架 vs 當前冊子 導航標籤 */}
+            {/* 書架 vs 當前冊子 導航標籤（未進入冊子時不顯示冊名） */}
             {!isSingleBookMode && (
-              <div className="flex items-center gap-1 mt-0.5">
-                <button
-                  type="button"
-                  onClick={() => onTabChange?.('shelf')}
-                  className={`text-[10px] sm:text-[11px] font-bold px-1.5 py-0.5 rounded transition-colors cursor-pointer ${
-                    activeTab === 'shelf'
-                      ? 'text-amber-900 bg-amber-50 font-black'
-                      : 'text-stone-500 hover:text-stone-800'
-                  }`}
-                >
-                  書架 ({books.length})
-                </button>
-                {currentBook && (
+              <div className="flex items-center gap-1.5 mt-0.5">
+                {activeTab === 'shelf' ? (
+                  <span className="text-[10px] sm:text-[11px] font-bold text-stone-600 bg-stone-100 px-2 py-0.5 rounded">
+                    📚 圖冊書架 (共 {books.length} 冊)
+                  </span>
+                ) : (
                   <>
-                    <span className="text-stone-300 text-[10px]">/</span>
                     <button
                       type="button"
-                      onClick={() => onTabChange?.('book')}
-                      className={`text-[10px] sm:text-[11px] font-bold px-1.5 py-0.5 rounded transition-colors cursor-pointer truncate max-w-[120px] sm:max-w-[200px] ${
-                        activeTab === 'book'
-                          ? 'text-amber-900 bg-amber-50 font-black'
-                          : 'text-stone-500 hover:text-stone-800'
-                      }`}
+                      onClick={() => onTabChange?.('shelf')}
+                      className="text-[10px] sm:text-[11px] font-bold text-stone-500 hover:text-stone-900 px-1 py-0.5 rounded transition-colors cursor-pointer flex items-center gap-0.5"
                     >
-                      {currentBook.title}
+                      ← 返回書架
                     </button>
+                    <span className="text-stone-300 text-[10px]">/</span>
+                    <span className="text-[10px] sm:text-[11px] font-bold text-amber-900 bg-amber-50 px-1.5 py-0.5 rounded truncate max-w-[120px] sm:max-w-[200px]">
+                      {currentBook?.title || '當前圖冊'}
+                    </span>
                   </>
                 )}
               </div>

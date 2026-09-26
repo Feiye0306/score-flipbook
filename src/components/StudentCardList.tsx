@@ -6,10 +6,11 @@ import {
   Share2, 
   UploadCloud, 
   Check, 
-  User,
-  BookOpen
+  Download,
+  Users
 } from 'lucide-react';
 import type { ExamBook, StudentFolder } from '../types';
+import { downloadPersonImages } from '../utils/zipExporter';
 
 interface StudentCardListProps {
   currentBook: ExamBook;
@@ -31,6 +32,7 @@ export const StudentCardList: React.FC<StudentCardListProps> = ({
   isViewOnly = false,
 }) => {
   const [copiedName, setCopiedName] = useState<string | null>(null);
+  const [downloadingName, setDownloadingName] = useState<string | null>(null);
 
   const students = Object.values(currentBook.students || {});
 
@@ -40,10 +42,10 @@ export const StudentCardList: React.FC<StudentCardListProps> = ({
     return s.studentName.toLowerCase().includes(searchQuery.toLowerCase().trim());
   });
 
-  // 排序：依學生姓名筆畫排序
+  // 排序：依繁體中文筆畫排序
   filteredStudents.sort((a, b) => a.studentName.localeCompare(b.studentName, 'zh-Hant'));
 
-  // 複製單一學生個人專屬分享連結
+  // 複製單一成員專屬分享連結
   const copyStudentLink = (studentName: string, e: React.MouseEvent) => {
     e.stopPropagation();
     const url = new URL(window.location.origin + window.location.pathname);
@@ -55,6 +57,17 @@ export const StudentCardList: React.FC<StudentCardListProps> = ({
     setTimeout(() => setCopiedName(null), 2000);
   };
 
+  // 分人打包下載
+  const handleDownloadPerson = async (studentName: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const folder = currentBook.students?.[studentName];
+    if (!folder?.images || folder.images.length === 0) return;
+
+    setDownloadingName(studentName);
+    await downloadPersonImages(studentName, folder.images);
+    setDownloadingName(null);
+  };
+
   if (students.length === 0) {
     return (
       <div className="text-center py-8 sm:py-14 px-4 bg-white rounded-2xl border border-stone-200/80 shadow-sm my-2 sm:my-4">
@@ -62,10 +75,10 @@ export const StudentCardList: React.FC<StudentCardListProps> = ({
           <UploadCloud className="w-6 h-6 sm:w-7 sm:h-7 text-amber-700" />
         </div>
         <h3 className="text-sm sm:text-base font-bold text-stone-900 font-serif">
-          此冊尚無考卷圖片
+          此冊尚無任何圖片
         </h3>
         <p className="text-xs text-stone-500 max-w-xs sm:max-w-sm mx-auto mt-1 mb-4">
-          點擊下方按鈕上傳考卷或成績圖片，系統會自動歸納成冊。
+          點擊下方按鈕上傳照片或截圖，系統會自動歸納成冊。
         </p>
         <button
           type="button"
@@ -73,7 +86,7 @@ export const StudentCardList: React.FC<StudentCardListProps> = ({
           className="inline-flex items-center gap-2 px-5 py-2.5 text-xs font-bold text-white bg-stone-900 hover:bg-stone-800 rounded-xl shadow-sm transition-all active:scale-95 cursor-pointer"
         >
           <UploadCloud className="w-4 h-4 text-amber-400" />
-          <span>＋ 立即上傳考卷圖</span>
+          <span>＋ 立即上傳圖片</span>
         </button>
       </div>
     );
@@ -82,7 +95,7 @@ export const StudentCardList: React.FC<StudentCardListProps> = ({
   if (filteredStudents.length === 0) {
     return (
       <div className="text-center py-12 text-stone-400 text-xs">
-        找不到符合「{searchQuery}」的學生
+        找不到符合「{searchQuery}」的成員
       </div>
     );
   }
@@ -92,22 +105,23 @@ export const StudentCardList: React.FC<StudentCardListProps> = ({
       {/* 頂部資訊列 */}
       <div className="flex items-center justify-between text-xs text-stone-500 px-1">
         <div className="flex items-center gap-2">
-          <span className="font-bold text-stone-800">學生考卷列表</span>
+          <span className="font-bold text-stone-800">成員名冊列表</span>
           <span className="px-2.5 py-0.5 bg-amber-50 text-amber-900 border border-amber-200/80 rounded-full font-bold text-[11px]">
             共 {filteredStudents.length} 人
           </span>
         </div>
         <span className="text-[11px] text-stone-400">
-          點卡片開大圖翻閱
+          點選卡片開啟大圖翻閱
         </span>
       </div>
 
-      {/* 學生卡片自適應網格 (手機 2 欄，平版 3 欄，電腦 4~5 欄) */}
+      {/* 成員卡片自適應網格 */}
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2.5 sm:gap-4">
         {filteredStudents.map((student) => {
           const firstImage = student.images[0];
           const imageCount = student.images.length;
           const isCopied = copiedName === student.studentName;
+          const isDownloading = downloadingName === student.studentName;
 
           return (
             <div
@@ -115,7 +129,7 @@ export const StudentCardList: React.FC<StudentCardListProps> = ({
               onClick={() => onOpenViewer(student.studentName, 0)}
               className="group bg-white rounded-2xl border border-stone-200/90 hover:border-amber-400 hover:shadow-lg transition-all duration-200 overflow-hidden cursor-pointer flex flex-col active:scale-[0.98]"
             >
-              {/* 考卷封面預覽 */}
+              {/* 圖片封面預覽 */}
               <div className="aspect-[4/3] bg-stone-100 relative overflow-hidden flex items-center justify-center">
                 {firstImage ? (
                   <img
@@ -134,7 +148,7 @@ export const StudentCardList: React.FC<StudentCardListProps> = ({
                 {/* 頁數標籤 */}
                 <div className="absolute top-2 right-2 bg-stone-900/75 backdrop-blur-sm text-stone-100 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 shadow-sm">
                   <Images className="w-3 h-3 text-amber-300" />
-                  <span>{imageCount} 頁</span>
+                  <span>{imageCount} 張</span>
                 </div>
 
                 {/* 懸浮預覽標籤 */}
@@ -146,7 +160,7 @@ export const StudentCardList: React.FC<StudentCardListProps> = ({
                 </div>
               </div>
 
-              {/* 底部學生姓名與小動作 */}
+              {/* 底部成員姓名與小動作 */}
               <div className="p-2.5 sm:p-3 flex items-center justify-between gap-1 bg-white border-t border-stone-100">
                 <div className="flex items-center gap-1.5 min-w-0">
                   <div className="w-6 h-6 rounded-full bg-stone-100 text-stone-700 flex items-center justify-center flex-shrink-0 text-xs font-bold border border-stone-200">
@@ -157,8 +171,20 @@ export const StudentCardList: React.FC<StudentCardListProps> = ({
                   </h4>
                 </div>
 
-                {/* 簡潔小圖示列 */}
+                {/* 簡潔小動作列：分人打包下載、複製個人連結、刪除 */}
                 <div className="flex items-center gap-0.5 flex-shrink-0">
+                  {/* 分人打包下載按鈕 */}
+                  <button
+                    type="button"
+                    onClick={(e) => handleDownloadPerson(student.studentName, e)}
+                    disabled={imageCount === 0 || isDownloading}
+                    className="p-1.5 text-stone-400 hover:text-stone-800 hover:bg-stone-100 rounded-lg transition-colors cursor-pointer disabled:opacity-30"
+                    title={`打包下載 ${student.studentName} 的所有圖片`}
+                  >
+                    <Download className={`w-3.5 h-3.5 ${isDownloading ? 'animate-bounce text-amber-600' : ''}`} />
+                  </button>
+
+                  {/* 複製個人連結 */}
                   <button
                     type="button"
                     onClick={(e) => copyStudentLink(student.studentName, e)}
@@ -173,12 +199,12 @@ export const StudentCardList: React.FC<StudentCardListProps> = ({
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
-                        if (confirm(`確定刪除「${student.studentName}」的成績截圖嗎？`)) {
+                        if (confirm(`確定刪除「${student.studentName}」的所有圖片嗎？`)) {
                           onDeleteStudent(student.studentName);
                         }
                       }}
                       className="p-1.5 text-stone-300 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
-                      title="刪除此學生"
+                      title="刪除此成員"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>

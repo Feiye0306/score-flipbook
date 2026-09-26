@@ -15,12 +15,15 @@ import { FlipViewerModal } from './components/FlipViewerModal';
 import { StudentPrivateView } from './components/StudentPrivateView';
 import { ShareModal } from './components/ShareModal';
 import { FirebaseGuideModal } from './components/FirebaseGuideModal';
-import { BookOpen, UploadCloud, Users, ArrowLeft } from 'lucide-react';
+import { BookOpen, UploadCloud, Users, ArrowLeft, Download, Loader2 } from 'lucide-react';
+import { downloadBookImages } from './utils/zipExporter';
 
 export const App: React.FC = () => {
   const [books, setBooks] = useState<ExamBook[]>([]);
   const [currentBookId, setCurrentBookId] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [isDownloadingBook, setIsDownloadingBook] = useState(false);
+  const [downloadProgressText, setDownloadProgressText] = useState('');
   
   // 視圖標籤：'shelf' (書架總覽) vs 'book' (單冊名單)
   const [activeTab, setActiveTab] = useState<'shelf' | 'book'>('shelf');
@@ -73,7 +76,7 @@ export const App: React.FC = () => {
             // 訪客透過隨機新連結進入，為其建立此專屬冊子
             const sharedNewBook: ExamBook = {
               id: 'exam_' + Date.now(),
-              title: '分享的測驗成績冊',
+              title: '分享的圖文翻閱冊',
               shareCode: shareParam,
               createdAt: Date.now(),
               updatedAt: Date.now(),
@@ -90,7 +93,7 @@ export const App: React.FC = () => {
         // 初次若無任何冊子，自動建立預設第一本
         const defaultBook: ExamBook = {
           id: 'exam_' + Date.now(),
-          title: '第一次段考 - 數學科',
+          title: '圖文手冊 - 專案第一輯',
           shareCode: 'bk_' + Math.random().toString(36).substring(2, 8),
           createdAt: Date.now(),
           updatedAt: Date.now(),
@@ -247,7 +250,7 @@ export const App: React.FC = () => {
               setIsShareModalOpen(true);
             }}
             onCreateBookClick={() => {
-              const title = prompt('請輸入新冊子名稱（例如：113第一次段考數學）：');
+              const title = prompt('請輸入新冊子名稱（例如：活動照片集、圖文翻閱冊）：');
               if (title && title.trim()) {
                 handleCreateBook(title.trim());
               }
@@ -272,21 +275,26 @@ export const App: React.FC = () => {
                   </button>
                   <span className="text-stone-300">·</span>
                   <span className="text-[10px] sm:text-[11px] font-bold text-amber-800 bg-amber-50 border border-amber-200/70 px-2 py-0.5 rounded">
-                    測驗冊
+                    圖文冊
                   </span>
-                  {currentBook.shareCode && (
-                    <span className="text-[10px] font-mono text-stone-400">
-                      #{currentBook.shareCode}
-                    </span>
-                  )}
                 </div>
 
                 <h2 className="text-lg sm:text-2xl font-bold text-stone-900 font-serif tracking-tight">
                   {currentBook.title}
                 </h2>
-                <p className="text-xs text-stone-500">
-                  共收錄 {studentCount} 位學生考卷。點選卡片或點右側「開始翻閱」依序閱卷。
-                </p>
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-stone-500">
+                  <span className="font-medium text-stone-700">
+                    名單 {studentCount} 人 · 共 {Object.values(currentBook.students || {}).reduce((acc, s) => acc + (s.images?.length || 0), 0)} 張圖
+                  </span>
+                  {currentBook.updatedAt && (
+                    <>
+                      <span className="text-stone-300">·</span>
+                      <span className="text-stone-400">
+                        最後修訂：{new Date(currentBook.updatedAt).toLocaleDateString('zh-TW', { year: 'numeric', month: '2-digit', day: '2-digit' })} {new Date(currentBook.updatedAt).toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', hour12: false })}
+                      </span>
+                    </>
+                  )}
+                </div>
               </div>
 
               {/* 橫幅主要動作區：手機版友善排版 (絕不碎裂、絕不折行) */}
@@ -297,20 +305,54 @@ export const App: React.FC = () => {
                       type="button"
                       onClick={() => handleOpenViewerForBook(currentBook)}
                       className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 text-xs font-bold text-white bg-stone-900 hover:bg-stone-800 rounded-xl shadow-sm transition-all active:scale-95 cursor-pointer whitespace-nowrap"
-                      title="從第 1 位學生開始全螢幕依序翻閱整冊考卷"
+                      title="從第 1 位成員開始全螢幕依序翻閱"
                     >
                       <BookOpen className="w-4 h-4 text-amber-400" />
                       <span>📖 開始翻閱全冊 ({studentCount}人)</span>
                     </button>
 
                     <div className="flex items-center gap-2 w-full sm:w-auto">
+                      {/* 整冊打包下載按鈕 */}
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          if (isDownloadingBook) return;
+                          setIsDownloadingBook(true);
+                          setDownloadProgressText('準備打包...');
+                          try {
+                            await downloadBookImages(currentBook, (p) => setDownloadProgressText(p));
+                          } catch (err) {
+                            console.error('打包下載失敗', err);
+                            alert('打包下載失敗，請稍後再試');
+                          } finally {
+                            setIsDownloadingBook(false);
+                            setDownloadProgressText('');
+                          }
+                        }}
+                        disabled={isDownloadingBook}
+                        className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 text-xs font-bold text-stone-700 bg-stone-100 hover:bg-stone-200 border border-stone-200 rounded-xl shadow-xs transition-all cursor-pointer whitespace-nowrap disabled:opacity-50"
+                        title="打包下載本冊所有圖片為 Zip 壓縮檔 (依成員自動分類資料夾)"
+                      >
+                        {isDownloadingBook ? (
+                          <>
+                            <Loader2 className="w-4 h-4 text-stone-700 animate-spin" />
+                            <span>{downloadProgressText || '打包中...'}</span>
+                          </>
+                        ) : (
+                          <>
+                            <Download className="w-4 h-4 text-stone-600" />
+                            <span>整冊打包</span>
+                          </>
+                        )}
+                      </button>
+
                       <button
                         type="button"
                         onClick={() => {
                           setShareModalBook(currentBook);
                           setIsShareModalOpen(true);
                         }}
-                        className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 text-xs font-bold text-amber-900 bg-amber-50 hover:bg-amber-100 border border-amber-200/80 rounded-xl shadow-sm transition-all cursor-pointer whitespace-nowrap"
+                        className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 text-xs font-bold text-amber-900 bg-amber-50 hover:bg-amber-100 border border-amber-200/80 rounded-xl shadow-xs transition-all cursor-pointer whitespace-nowrap"
                         title="產生本冊專屬連結，發給他人一起看圖與上傳"
                       >
                         <Users className="w-4 h-4 text-amber-700" />
@@ -321,7 +363,7 @@ export const App: React.FC = () => {
                         <button
                           type="button"
                           onClick={() => setIsUploadOpen(true)}
-                          className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 text-xs font-bold text-stone-700 bg-white hover:bg-stone-50 border border-stone-300 rounded-xl shadow-sm transition-all cursor-pointer whitespace-nowrap"
+                          className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 text-xs font-bold text-stone-700 bg-white hover:bg-stone-50 border border-stone-300 rounded-xl shadow-xs transition-all cursor-pointer whitespace-nowrap"
                         >
                           <UploadCloud className="w-4 h-4 text-stone-600" />
                           <span>＋ 上傳</span>
@@ -338,7 +380,7 @@ export const App: React.FC = () => {
                       className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-5 py-2.5 text-xs font-bold text-white bg-stone-900 hover:bg-stone-800 rounded-xl shadow-sm transition-all active:scale-95 cursor-pointer whitespace-nowrap"
                     >
                       <UploadCloud className="w-4 h-4 text-amber-400" />
-                      <span>🚀 立即上傳考卷截圖</span>
+                      <span>🚀 立即上傳圖片</span>
                     </button>
 
                     <button
