@@ -257,68 +257,68 @@ export const BookshelfView: React.FC<BookshelfViewProps> = ({
           return (
             <div
               key={book.id}
-              className={`group relative bg-white rounded-2xl border transition-all duration-300 flex flex-col justify-between overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1 ${
+              className={`group relative rounded-2xl border transition-all duration-300 flex flex-col justify-between overflow-hidden shadow-md hover:shadow-2xl hover:-translate-y-1.5 bg-gradient-to-b ${theme.bgGradient} ${
                 isCurrent 
-                  ? 'border-amber-400 ring-2 ring-amber-100' 
-                  : 'border-stone-200/90 hover:border-stone-400/80'
+                  ? 'border-amber-400 ring-4 ring-amber-400/30 shadow-amber-950/40' 
+                  : 'border-white/15 hover:border-amber-400/60'
               }`}
             >
-              {/* 冊子封面 (典雅藏書皮革質感，專屬多彩莫蘭迪配色) */}
+              {/* 書脊裝訂感 (立體微光影貫穿整冊) */}
+              <div className={`absolute left-0 top-0 bottom-0 w-3 bg-gradient-to-r ${theme.spineGradient} border-r ${theme.borderStroke} z-20 pointer-events-none`} />
+
+              {/* 燙印邊框裝飾 */}
+              <div className={`absolute inset-2 border ${theme.borderStroke} rounded-xl pointer-events-none z-20`} />
+
+              {/* 冊子封面主要展示區 */}
               <div 
                 onClick={() => onOpenViewerForBook(book)}
-                className={`relative p-6 sm:p-7 bg-gradient-to-br ${theme.bgGradient} text-stone-100 cursor-pointer overflow-hidden select-none transition-transform active:scale-[0.99]`}
+                className="relative p-6 sm:p-7 text-white cursor-pointer overflow-hidden select-none transition-transform active:scale-[0.99] z-10"
                 title="點擊直接打開並開始翻閱這本冊子"
               >
-                {/* 書脊裝訂感 (立體微光影) */}
-                <div className={`absolute left-0 top-0 bottom-0 w-3 bg-gradient-to-r ${theme.spineGradient} border-r ${theme.borderStroke}`} />
-                
-                {/* 燙印邊框 */}
-                <div className={`absolute inset-2 border ${theme.borderStroke} rounded-xl pointer-events-none`} />
-
                 {/* 封面內容排版 */}
-                <div className="relative z-10 flex flex-col h-36 justify-between pl-2">
+                <div className="relative flex flex-col min-h-[140px] justify-between pl-2">
                   {/* 頂部：優雅分類徽記 + 書色標記 */}
-                  <div className="flex items-center justify-between">
-                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md border text-[11px] font-medium tracking-wide ${theme.badgeClass}`}>
-                      <FolderOpen className={`w-3.5 h-3.5 ${theme.iconColor}`} />
+                  <div className="flex items-center justify-between gap-2">
+                    <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg border text-xs sm:text-sm font-semibold tracking-wide ${theme.badgeClass}`}>
+                      <FolderOpen className={`w-4 h-4 ${theme.iconColor}`} />
                       <span>{theme.name}</span>
                     </span>
 
                     {/* 迷你若隱若現的微縮卡 */}
                     {sampleThumbnail && (
-                      <div className="w-9 h-11 rounded bg-black/40 border border-white/20 overflow-hidden shadow-md transform rotate-6 opacity-75 group-hover:opacity-100 transition-all">
+                      <div className="w-10 h-12 rounded-lg bg-black/50 border border-white/30 overflow-hidden shadow-lg transform rotate-6 opacity-85 group-hover:opacity-100 group-hover:rotate-0 transition-all duration-300">
                         <img 
                           src={sampleThumbnail} 
                           alt="preview" 
-                          className="w-full h-full object-cover filter contrast-90 brightness-95" 
+                          className="w-full h-full object-cover filter contrast-105 brightness-95" 
                         />
                       </div>
                     )}
                   </div>
 
-                  {/* 冊子主標題 */}
-                  <div className="my-auto py-1">
-                    <h3 className={`font-serif font-bold text-lg sm:text-xl text-stone-100 ${theme.accentText} transition-colors line-clamp-2 leading-snug tracking-tight drop-shadow-xs`}>
+                  {/* 冊子主標題：大字號、立體、極致清晰 */}
+                  <div className="my-3 py-1">
+                    <h3 className={`font-serif font-extrabold text-xl sm:text-2xl text-white ${theme.accentText} transition-colors line-clamp-2 leading-snug tracking-normal drop-shadow-md`}>
                       {book.title}
                     </h3>
                   </div>
 
-                  {/* 底部數據：依指示簡化為「名單 X 人 · 共 Y 張圖」 */}
-                  <div className={`flex items-center justify-between text-xs text-stone-300 pt-2 border-t ${theme.bottomBorder}`}>
-                    <div className="flex items-center gap-1.5 font-medium">
-                      <Users className={`w-3.5 h-3.5 ${theme.iconColor}`} />
+                  {/* 底部數據：大字清晰「名單 X 人 · 共 Y 張圖」 */}
+                  <div className={`flex items-center justify-between text-sm sm:text-base text-amber-200/95 font-bold pt-2.5 border-t ${theme.bottomBorder}`}>
+                    <div className="flex items-center gap-2">
+                      <Users className={`w-4 h-4 ${theme.iconColor}`} />
                       <span>名單 {studentCount} 人 · 共 {totalPages} 張圖</span>
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* 冊子下方資訊與操作 */}
-              <div className="p-4 sm:p-5 flex-1 flex flex-col justify-between bg-white border-t border-stone-100">
-                {/* 最後修訂日期 */}
-                <div className="flex items-center justify-between text-[11px] text-stone-500 mb-3">
-                  <span className="flex items-center gap-1 text-stone-400">
-                    <Calendar className="w-3 h-3 text-stone-400" />
+              {/* 冊子下方資訊與操作 (一體化深色暗調底座，徹底告別刺眼白底) */}
+              <div className="p-4 sm:p-5 flex-1 flex flex-col justify-between bg-black/40 backdrop-blur-xs border-t border-white/10 z-10">
+                {/* 最後修訂日期與打包下載：字體放大、對比鮮明 */}
+                <div className="flex items-center justify-between text-xs sm:text-sm text-stone-200 mb-3.5 pl-1.5">
+                  <span className="flex items-center gap-1.5 text-stone-300 font-medium">
+                    <Calendar className="w-4 h-4 text-amber-400" />
                     <span>最後修訂：{formatUpdateTime(book.updatedAt || book.createdAt)}</span>
                   </span>
 
@@ -330,49 +330,49 @@ export const BookshelfView: React.FC<BookshelfViewProps> = ({
                       downloadBookImages(book, setDownloadProgress);
                     }}
                     disabled={totalPages === 0}
-                    className="inline-flex items-center gap-1 text-stone-500 hover:text-stone-900 hover:bg-stone-100 px-2 py-0.5 rounded transition-colors disabled:opacity-30 cursor-pointer"
+                    className="inline-flex items-center gap-1.5 text-stone-200 hover:text-white bg-white/10 hover:bg-white/20 border border-white/20 px-2.5 py-1 rounded-lg transition-colors disabled:opacity-30 cursor-pointer font-medium text-xs sm:text-sm"
                     title="將全冊所有成員圖片打包下載為 ZIP"
                   >
-                    <Download className="w-3 h-3 text-stone-600" />
+                    <Download className="w-3.5 h-3.5 text-amber-300" />
                     <span>打包下載</span>
                   </button>
                 </div>
 
                 {/* 操作按鈕群 */}
-                <div className="space-y-2 pt-2 border-t border-stone-100">
-                  {/* 主要翻閱按鈕 (單一清晰入口，絕不重複) */}
+                <div className="space-y-2.5 pt-2.5 border-t border-white/10">
+                  {/* 主要翻閱按鈕：燙金銘牌奢華感，大字霸氣易點擊 */}
                   <button
                     type="button"
                     onClick={() => onOpenViewerForBook(book)}
                     disabled={studentCount === 0}
-                    className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 text-xs font-bold text-white bg-stone-900 hover:bg-stone-800 disabled:opacity-40 disabled:pointer-events-none rounded-xl shadow-sm transition-all active:scale-95 cursor-pointer"
+                    className="w-full inline-flex items-center justify-center gap-2.5 px-4 py-3 text-sm sm:text-base font-extrabold text-stone-950 bg-gradient-to-r from-amber-400 via-amber-300 to-amber-500 hover:from-amber-300 hover:to-amber-400 disabled:opacity-40 disabled:pointer-events-none rounded-xl shadow-lg transition-all active:scale-98 cursor-pointer tracking-wide"
                   >
-                    <BookOpen className="w-3.5 h-3.5 text-amber-400" />
+                    <BookOpen className="w-4 h-4 text-stone-950" />
                     <span>點擊進入翻頁閱讀</span>
-                    <ArrowRight className="w-3.5 h-3.5 text-stone-400 group-hover:translate-x-0.5 transition-transform" />
+                    <ArrowRight className="w-4 h-4 text-stone-900 group-hover:translate-x-1 transition-transform" />
                   </button>
 
                   {/* 次要動作列：快速確認名單彈窗 (免整頁跳轉)、分享協作、刪除 */}
-                  <div className="flex items-center justify-between gap-1.5 text-xs">
+                  <div className="flex items-center justify-between gap-2 text-xs sm:text-sm">
                     {/* 點擊打開快速人員列表彈窗 (免展開全頁) */}
                     <button
                       type="button"
                       onClick={() => setQuickListBook(book)}
-                      className="inline-flex items-center gap-1 px-2.5 py-1 text-stone-700 bg-stone-100 hover:bg-stone-200/80 rounded-lg transition-colors font-bold text-[11px] cursor-pointer"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-stone-100 bg-white/15 hover:bg-white/25 border border-white/20 rounded-xl transition-all font-bold text-xs sm:text-sm cursor-pointer"
                       title="點擊查看名單快速確認 (免跳轉整頁)"
                     >
-                      <Users className="w-3.5 h-3.5 text-stone-600" />
+                      <Users className="w-4 h-4 text-amber-300" />
                       <span>名單確認 ({studentCount})</span>
                     </button>
 
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-1.5">
                       <button
                         type="button"
                         onClick={() => onOpenShareModal(book)}
-                        className="inline-flex items-center gap-1 px-2.5 py-1 text-amber-800 bg-amber-50 hover:bg-amber-100 border border-amber-200/80 rounded-lg transition-colors font-bold text-[11px] cursor-pointer"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-amber-300 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/40 rounded-xl transition-all font-bold text-xs sm:text-sm cursor-pointer"
                         title="複製這本冊子的專屬協作分享連結 (他人可看可上傳)"
                       >
-                        <Share2 className="w-3 h-3 text-amber-600" />
+                        <Share2 className="w-3.5 h-3.5 text-amber-300" />
                         <span>分享協作</span>
                       </button>
 
@@ -384,10 +384,10 @@ export const BookshelfView: React.FC<BookshelfViewProps> = ({
                               onDeleteBook(book.id);
                             }
                           }}
-                          className="p-1 text-stone-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                          className="p-1.5 text-stone-400 hover:text-rose-300 hover:bg-rose-500/20 rounded-xl transition-colors cursor-pointer"
                           title="刪除此冊"
                         >
-                          <Trash2 className="w-3.5 h-3.5" />
+                          <Trash2 className="w-4 h-4" />
                         </button>
                       )}
                     </div>
@@ -402,15 +402,15 @@ export const BookshelfView: React.FC<BookshelfViewProps> = ({
         {!isViewOnly && (
           <div
             onClick={onCreateBookClick}
-            className="group min-h-[260px] rounded-2xl border-2 border-dashed border-stone-300 hover:border-amber-500/80 bg-stone-50/50 hover:bg-amber-50/20 transition-all duration-300 flex flex-col items-center justify-center p-6 text-center cursor-pointer"
+            className="group min-h-[280px] rounded-2xl border-2 border-dashed border-stone-300 hover:border-amber-500 bg-stone-50/60 hover:bg-amber-50/30 transition-all duration-300 flex flex-col items-center justify-center p-6 text-center cursor-pointer shadow-xs"
           >
-            <div className="w-12 h-12 rounded-2xl bg-white border border-stone-200 group-hover:border-amber-300 group-hover:scale-110 flex items-center justify-center text-stone-400 group-hover:text-amber-600 shadow-sm transition-all duration-300 mb-3">
-              <Plus className="w-6 h-6" />
+            <div className="w-14 h-14 rounded-2xl bg-white border border-stone-200 group-hover:border-amber-400 group-hover:scale-110 flex items-center justify-center text-stone-400 group-hover:text-amber-600 shadow-sm transition-all duration-300 mb-3.5">
+              <Plus className="w-7 h-7" />
             </div>
-            <h4 className="font-bold text-stone-800 group-hover:text-amber-900 text-sm">
+            <h4 className="font-bold text-stone-900 group-hover:text-amber-900 text-base">
               建立新圖文冊
             </h4>
-            <p className="text-xs text-stone-500 max-w-[200px] mt-1">
+            <p className="text-xs sm:text-sm text-stone-600 max-w-[220px] mt-1.5 leading-relaxed">
               例如：「專案設計截圖」、「活動成果記錄」、「測驗成果」
             </p>
           </div>
@@ -425,27 +425,27 @@ export const BookshelfView: React.FC<BookshelfViewProps> = ({
             {/* 彈窗頂部 */}
             <div className="flex items-center justify-between pb-3 border-b border-stone-200 flex-shrink-0">
               <div>
-                <h3 className="text-base font-bold text-stone-900 font-serif flex items-center gap-2">
-                  <Users className="w-4 h-4 text-amber-700" />
+                <h3 className="text-lg font-bold text-stone-900 font-serif flex items-center gap-2">
+                  <Users className="w-5 h-5 text-amber-600" />
                   <span>「{quickListBook.title}」人員名單</span>
                 </h3>
-                <p className="text-xs text-stone-500 mt-0.5">
-                  名單 {Object.keys(quickListBook.students || {}).length} 人 · 點選任一人員可直達翻閱
+                <p className="text-xs sm:text-sm text-stone-600 mt-1">
+                  名單共 {Object.keys(quickListBook.students || {}).length} 人 · 點選任一人員可直達翻閱
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setQuickListBook(null)}
-                className="p-1 rounded-lg text-stone-400 hover:text-stone-600 hover:bg-stone-100 transition-colors cursor-pointer"
+                className="p-1.5 rounded-lg text-stone-500 hover:text-stone-800 hover:bg-stone-100 transition-colors cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             {/* 成員列表捲軸 */}
-            <div className="flex-1 overflow-y-auto py-3 space-y-1.5 pr-1">
+            <div className="flex-1 overflow-y-auto py-3 space-y-2 pr-1">
               {Object.keys(quickListBook.students || {}).length === 0 ? (
-                <div className="text-center py-10 text-stone-400 text-xs">
+                <div className="text-center py-10 text-stone-500 text-sm">
                   此冊尚無任何人員資料
                 </div>
               ) : (
@@ -458,7 +458,7 @@ export const BookshelfView: React.FC<BookshelfViewProps> = ({
                     return (
                       <div
                         key={personName}
-                        className="flex items-center justify-between p-2.5 sm:p-3 rounded-xl bg-stone-50 hover:bg-amber-50/50 border border-stone-200/80 transition-all group"
+                        className="flex items-center justify-between p-3 rounded-xl bg-stone-50 hover:bg-amber-50/60 border border-stone-200 transition-all group"
                       >
                         {/* 點擊直接開啟翻閱器看該人 */}
                         <div
@@ -466,23 +466,23 @@ export const BookshelfView: React.FC<BookshelfViewProps> = ({
                             setQuickListBook(null);
                             onOpenViewerForBook(quickListBook, personName);
                           }}
-                          className="flex items-center gap-2.5 flex-1 min-w-0 cursor-pointer"
+                          className="flex items-center gap-3 flex-1 min-w-0 cursor-pointer"
                         >
-                          <span className="w-6 h-6 rounded-full bg-stone-200 text-stone-700 flex items-center justify-center text-xs font-bold font-mono">
+                          <span className="w-7 h-7 rounded-full bg-stone-200 text-stone-800 flex items-center justify-center text-xs font-bold font-mono">
                             {idx + 1}
                           </span>
                           <div className="min-w-0">
-                            <h4 className="font-bold text-stone-900 text-xs sm:text-sm group-hover:text-amber-800 transition-colors truncate">
+                            <h4 className="font-bold text-stone-900 text-sm sm:text-base group-hover:text-amber-800 transition-colors truncate">
                               {personName}
                             </h4>
-                            <span className="text-[11px] text-stone-500">
+                            <span className="text-xs text-stone-600 font-medium">
                               收錄 {imgCount} 張圖片
                             </span>
                           </div>
                         </div>
 
                         {/* 動作按鈕：分人打包下載 + 查看 */}
-                        <div className="flex items-center gap-1 flex-shrink-0">
+                        <div className="flex items-center gap-1.5 flex-shrink-0">
                           <button
                             type="button"
                             onClick={(e) => {
@@ -490,10 +490,10 @@ export const BookshelfView: React.FC<BookshelfViewProps> = ({
                               downloadPersonImages(personName, folder?.images || [], setDownloadProgress);
                             }}
                             disabled={imgCount === 0}
-                            className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold text-stone-700 bg-white border border-stone-300 hover:bg-stone-100 rounded-lg transition-colors cursor-pointer disabled:opacity-30"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-stone-800 bg-white border border-stone-300 hover:bg-stone-100 rounded-lg transition-colors cursor-pointer disabled:opacity-30"
                             title={`下載 ${personName} 的所有圖片`}
                           >
-                            <Download className="w-3 h-3 text-stone-600" />
+                            <Download className="w-3.5 h-3.5 text-stone-700" />
                             <span>下載</span>
                           </button>
 
@@ -503,10 +503,10 @@ export const BookshelfView: React.FC<BookshelfViewProps> = ({
                               setQuickListBook(null);
                               onOpenViewerForBook(quickListBook, personName);
                             }}
-                            className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold text-white bg-stone-900 hover:bg-stone-800 rounded-lg transition-colors cursor-pointer"
+                            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold text-white bg-stone-900 hover:bg-stone-800 rounded-lg transition-colors cursor-pointer"
                           >
                             <span>查看</span>
-                            <ArrowRight className="w-3 h-3 text-amber-300" />
+                            <ArrowRight className="w-3.5 h-3.5 text-amber-300" />
                           </button>
                         </div>
                       </div>
@@ -520,9 +520,9 @@ export const BookshelfView: React.FC<BookshelfViewProps> = ({
               <button
                 type="button"
                 onClick={() => downloadBookImages(quickListBook, setDownloadProgress)}
-                className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-stone-900 bg-stone-100 hover:bg-stone-200 border border-stone-300 rounded-xl transition-all cursor-pointer"
+                className="inline-flex items-center gap-2 px-4 py-2.5 text-xs sm:text-sm font-bold text-amber-900 bg-amber-50 hover:bg-amber-100 border border-amber-300 rounded-xl transition-all cursor-pointer"
               >
-                <Download className="w-3.5 h-3.5 text-stone-700" />
+                <Download className="w-4 h-4 text-amber-700" />
                 <span>整冊全部打包下載 (ZIP)</span>
               </button>
 
@@ -532,10 +532,10 @@ export const BookshelfView: React.FC<BookshelfViewProps> = ({
                   setQuickListBook(null);
                   onSelectBook(quickListBook.id);
                 }}
-                className="inline-flex items-center gap-1 text-xs font-bold text-stone-600 hover:text-stone-900 px-3 py-2 rounded-xl transition-colors cursor-pointer"
+                className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-stone-700 hover:text-stone-950 px-3 py-2 rounded-xl transition-colors cursor-pointer"
               >
                 <span>展開詳細管理</span>
-                <ExternalLink className="w-3.5 h-3.5" />
+                <ExternalLink className="w-4 h-4" />
               </button>
             </div>
           </div>
