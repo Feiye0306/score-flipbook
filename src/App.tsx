@@ -4,8 +4,11 @@ import {
   saveExamBook, 
   deleteExamBook, 
   removeStudentFolder,
-  getLocalBooks
+  getLocalBooks,
+  subscribeSingleBook,
+  fetchSingleBook
 } from './services/dbService';
+import { verifyAccessToken } from './services/tokenService';
 import type { ExamBook } from './types';
 import { Navbar } from './components/Navbar';
 import { BookshelfView } from './components/BookshelfView';
@@ -15,7 +18,7 @@ import { FlipViewerModal } from './components/FlipViewerModal';
 import { StudentPrivateView } from './components/StudentPrivateView';
 import { ShareModal } from './components/ShareModal';
 import { FirebaseGuideModal } from './components/FirebaseGuideModal';
-import { BookOpen, UploadCloud, Users, ArrowLeft, Download, Loader2 } from 'lucide-react';
+import { BookOpen, UploadCloud, Users, ArrowLeft, Download, Loader2, ShieldCheck, ShieldAlert } from 'lucide-react';
 import { downloadBookImages } from './utils/zipExporter';
 
 export const App: React.FC = () => {
@@ -24,6 +27,8 @@ export const App: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isDownloadingBook, setIsDownloadingBook] = useState(false);
   const [downloadProgressText, setDownloadProgressText] = useState('');
+  const [isVerifyingToken, setIsVerifyingToken] = useState(false);
+  const [tokenError, setTokenError] = useState<string | null>(null);
   
   // 視圖標籤：'shelf' (書架總覽) vs 'book' (單冊名單)
   const [activeTab, setActiveTab] = useState<'shelf' | 'book'>('shelf');
@@ -45,12 +50,47 @@ export const App: React.FC = () => {
   useEffect(() => {
     // 讀取 URL 參數
     const params = new URLSearchParams(window.location.search);
+    const tokenParam = params.get('token');
     const shareParam = params.get('share') || params.get('book');
     const studentParam = params.get('student');
     const modeParam = params.get('mode');
 
     if (studentParam) setUrlStudent(studentParam);
     if (modeParam === 'view') setIsViewOnly(true);
+
+    // 🛡️ 雙層鑑權模式：網址帶有去特化隨機 Token
+    if (tokenParam) {
+      setIsVerifyingToken(true);
+      setIsSingleBookMode(true);
+      setActiveTab('book');
+
+      verifyAccessToken(tokenParam).then(async (grant) => {
+        setIsVerifyingToken(false);
+        if (!grant) {
+          setTokenError('此安全分享憑證無效、過期或已被作者撤銷，基於資訊安全無法開啟此冊。');
+          return;
+        }
+
+        if (grant.role === 'view') {
+          setIsViewOnly(true);
+        }
+
+        setCurrentBookId(grant.bookId);
+
+        // 僅單點載入被授權的該冊，絕不請求全庫
+        const loadedBook = await fetchSingleBook(grant.bookId);
+        if (loadedBook) {
+          setBooks([loadedBook]);
+        }
+
+        // 精確單點即時監聽該冊
+        subscribeSingleBook(grant.bookId, (updatedBook) => {
+          setBooks((prev) => [updatedBook, ...prev.filter((b) => b.id !== updatedBook.id)]);
+        });
+      });
+      return;
+    }
+
     if (shareParam) {
       setIsSingleBookMode(true);
       setActiveTab('book'); // 訪客從特定分享連結進入直接看該冊
@@ -179,6 +219,52 @@ export const App: React.FC = () => {
     }
     setIsUploadOpen(false);
   };
+
+  // Token 鑑權查核中畫面
+  if (isVerifyingToken) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-[#FBFBFA] p-4 text-center">
+        <div className="w-16 h-16 rounded-3xl bg-amber-50 border border-amber-200 flex items-center justify-center mb-4 text-amber-700 shadow-sm animate-pulse">
+          <ShieldCheck className="w-8 h-8" />
+        </div>
+        <h2 className="text-lg font-bold text-stone-900 font-serif mb-2">
+          正在核對雙層雲端安全授權憑證...
+        </h2>
+        <p className="text-xs text-stone-500 max-w-sm leading-relaxed">
+          系統正在確認您所持有的密碼學 Access Token 是否合法，並隔離保護其他冊子資料。請稍候數秒...
+        </p>
+      </div>
+    );
+  }
+
+  // Token 驗證失敗畫面
+  if (tokenError) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-[#FBFBFA] p-4 text-center">
+        <div className="w-16 h-16 rounded-3xl bg-rose-50 border border-rose-200 flex items-center justify-center mb-4 text-rose-700 shadow-sm">
+          <ShieldAlert className="w-8 h-8" />
+        </div>
+        <h2 className="text-lg font-bold text-stone-900 font-serif mb-2">
+          存取受限：安全憑證無效或已撤銷
+        </h2>
+        <p className="text-xs text-stone-500 max-w-sm leading-relaxed mb-6">
+          {tokenError}
+        </p>
+        <button
+          type="button"
+          onClick={() => {
+            setTokenError(null);
+            const url = new URL(window.location.href);
+            url.searchParams.delete('token');
+            window.location.href = url.pathname;
+          }}
+          className="px-5 py-2.5 bg-stone-900 hover:bg-stone-800 text-white text-xs font-bold rounded-xl transition-all shadow-sm cursor-pointer"
+        >
+          返回首頁
+        </button>
+      </div>
+    );
+  }
 
   // 如果帶有 ?student=王小明，進入個人專屬模式
   if (urlStudent && currentBook) {

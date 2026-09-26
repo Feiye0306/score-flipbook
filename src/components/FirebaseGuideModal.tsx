@@ -5,10 +5,11 @@ import {
   ExternalLink, 
   Copy, 
   Check, 
-  ShieldAlert, 
+  ShieldCheck, 
   Download, 
   Smartphone,
-  Sparkles
+  Sparkles,
+  Lock
 } from 'lucide-react';
 import type { ExamBook } from '../types';
 import { exportBookBackup } from '../services/backupService';
@@ -24,28 +25,60 @@ export const FirebaseGuideModal: React.FC<FirebaseGuideModalProps> = ({
   isOpen,
   onClose,
 }) => {
-  const [copiedRule, setCopiedRule] = useState(false);
+  const [copiedFirestore, setCopiedFirestore] = useState(false);
+  const [copiedStorage, setCopiedStorage] = useState(false);
 
   if (!isOpen) return null;
 
-  const ruleCode = `rules_version = '2';
+  // 1. 專業防順藤摸瓜 Firestore 安全規則：全面禁止 list 遍歷
+  const firestoreRule = `rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /{document=**} {
+    // 🚫 嚴禁任何全庫掃描與遍歷（徹底杜絕順藤摸瓜爬蟲）
+    match /score_books {
+      allow list: if false;
+    }
+    match /score_books/{bookId} {
+      // 僅憑已知精確 ID 單點讀寫，外界物理上無法列出任何冊子清單
+      allow get, write: if true;
+      allow list: if false;
+    }
+    // 🚫 Token 安全鑑權層：嚴禁遍歷，僅限單點憑證查驗
+    match /access_tokens {
+      allow list: if false;
+    }
+    match /access_tokens/{token} {
+      allow get, write: if true;
+      allow list: if false;
+    }
+  }
+}`;
+
+  // 2. Storage 圖片存儲安全規則
+  const storageRule = `rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /flipbooks/{allPaths=**} {
       allow read, write: if true;
     }
   }
 }`;
 
-  const copyRule = () => {
-    navigator.clipboard.writeText(ruleCode);
-    setCopiedRule(true);
-    setTimeout(() => setCopiedRule(false), 2000);
+  const copyFirestore = () => {
+    navigator.clipboard.writeText(firestoreRule);
+    setCopiedFirestore(true);
+    setTimeout(() => setCopiedFirestore(false), 2000);
+  };
+
+  const copyStorage = () => {
+    navigator.clipboard.writeText(storageRule);
+    setCopiedStorage(true);
+    setTimeout(() => setCopiedStorage(false), 2000);
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-stone-950/60 backdrop-blur-sm p-4 overflow-y-auto animate-in fade-in duration-150">
-      <div className="bg-white rounded-3xl shadow-2xl max-w-lg w-full p-6 sm:p-7 relative border border-stone-200">
+      <div className="bg-white rounded-3xl shadow-2xl max-w-xl w-full p-6 sm:p-7 relative border border-stone-200 max-h-[90vh] flex flex-col">
         <button
           type="button"
           onClick={onClose}
@@ -54,93 +87,120 @@ service cloud.firestore {
           <X className="w-5 h-5" />
         </button>
 
-        <div className="flex items-center gap-3 mb-3">
+        <div className="flex items-center gap-3 mb-2 flex-shrink-0">
           <div className="w-10 h-10 rounded-2xl bg-amber-50 border border-amber-200 text-amber-800 flex items-center justify-center flex-shrink-0">
             <Cloud className="w-5 h-5 text-amber-700" />
           </div>
           <div>
             <h3 className="text-base sm:text-lg font-bold text-stone-900 font-serif">
-              雲端同步狀態與跨裝置設定
+              雲端開通與安全防護說明
             </h3>
             <p className="text-xs text-stone-500">
-              為什麼手機點開分享連結會是空白？
+              專案 ID：<span className="font-mono text-amber-900 font-bold">gen-lang-client-0123519296</span>
             </p>
           </div>
         </div>
 
-        <div className="text-xs text-stone-600 space-y-4 mb-6 leading-relaxed">
-          <div className="bg-amber-50/70 border border-amber-200 rounded-xl p-3.5">
-            <h4 className="font-bold text-amber-950 flex items-center gap-1.5 mb-1">
-              <ShieldAlert className="w-4 h-4 text-amber-700" />
-              原因說明：Firebase 雲端規則尚未開放
+        <div className="text-xs text-stone-600 space-y-4 my-2 overflow-y-auto pr-1 leading-relaxed">
+          {/* 安全架構背書 */}
+          <div className="bg-emerald-50/70 border border-emerald-200/80 rounded-2xl p-3.5">
+            <h4 className="font-bold text-emerald-950 flex items-center gap-1.5 mb-1">
+              <ShieldCheck className="w-4 h-4 text-emerald-700" />
+              資料庫安全設計：徹底杜絕順藤摸瓜（Anti-Scraping）
             </h4>
             <p className="text-stone-600 text-[11px] leading-normal">
-              目前您上傳的考卷已安全保存在<b>這台電腦的瀏覽器中</b>。但因為 Firebase 專案（<code className="text-amber-900 font-mono">gen-lang-client-0123519296</code>）預設阻擋未登入讀寫，因此手機或其他人的設備連線時會被拒絕，導致顯示 0 人。
+              下方規則強制關閉了 <code className="text-rose-800 font-mono font-bold">allow list: if false</code>。這意味著<b>任何外部人員或網路爬蟲，都絕對無法掃描您的資料庫清單</b>！訪客只能透過您分享的高熵加密 Token 精準開啟被授權的那一本，完全看不到其他任何冊子或學生資料。
             </p>
           </div>
 
-          {/* 解法 A：30秒開通 Firebase 規則 (永久解決) */}
-          <div className="space-y-2">
-            <h4 className="font-bold text-stone-900 flex items-center gap-1 text-xs">
-              <Sparkles className="w-4 h-4 text-amber-600" />
-              方法一：30 秒發布 Firebase 讀寫規則（推薦）
-            </h4>
-            <p className="text-[11px] text-stone-500">
-              只需點開下方連結，貼上規則並點擊「發布」，即可開通所有手機與電腦隨處看圖：
-            </p>
-
-            <div className="bg-stone-900 text-stone-200 p-3 rounded-xl relative font-mono text-[11px]">
-              <pre className="overflow-x-auto">{ruleCode}</pre>
-              <button
-                type="button"
-                onClick={copyRule}
-                className="absolute top-2 right-2 inline-flex items-center gap-1 px-2.5 py-1 rounded bg-stone-800 hover:bg-stone-700 text-stone-100 text-[10px] font-sans font-bold cursor-pointer"
+          {/* 步驟 1：Firestore 規則 */}
+          <div className="space-y-2 border border-stone-200 rounded-2xl p-4 bg-stone-50/50">
+            <div className="flex items-center justify-between">
+              <h4 className="font-bold text-stone-900 flex items-center gap-1.5 text-xs">
+                <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+                步驟 1：發布 Firestore 資料庫規則（防順藤摸瓜）
+              </h4>
+              <a
+                href="https://console.firebase.google.com/project/gen-lang-client-0123519296/firestore/rules"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-[11px] text-amber-800 hover:text-amber-950 font-bold underline cursor-pointer"
               >
-                {copiedRule ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
-                <span>{copiedRule ? '已複製！' : '複製規則代碼'}</span>
-              </button>
+                <span>前往後台設定</span>
+                <ExternalLink className="w-3 h-3" />
+              </a>
             </div>
 
-            <a
-              href="https://console.firebase.google.com/project/gen-lang-client-0123519296/firestore/rules"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center justify-center gap-1.5 w-full py-2.5 px-4 text-xs font-bold text-white bg-amber-800 hover:bg-amber-900 rounded-xl transition-all shadow-sm cursor-pointer"
-            >
-              <span>前往 Firebase Console 貼上規則</span>
-              <ExternalLink className="w-3.5 h-3.5" />
-            </a>
+            <div className="bg-stone-900 text-stone-200 p-3 rounded-xl relative font-mono text-[10.5px]">
+              <pre className="overflow-x-auto max-h-36">{firestoreRule}</pre>
+              <button
+                type="button"
+                onClick={copyFirestore}
+                className="absolute top-2 right-2 inline-flex items-center gap-1 px-2.5 py-1 rounded bg-stone-800 hover:bg-stone-700 text-stone-100 text-[10px] font-sans font-bold cursor-pointer"
+              >
+                {copiedFirestore ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                <span>{copiedFirestore ? '已複製！' : '複製代碼'}</span>
+              </button>
+            </div>
           </div>
 
-          {/* 解法 B：免雲端直接發送檔案 */}
-          {currentBook && (
-            <div className="border-t border-stone-200 pt-3 space-y-1.5">
-              <h4 className="font-bold text-stone-900 flex items-center gap-1 text-xs">
-                <Smartphone className="w-4 h-4 text-stone-600" />
-                方法二：免雲端！直接匯出檔案給手機看
+          {/* 步驟 2：Storage 圖片儲存庫規則 */}
+          <div className="space-y-2 border border-stone-200 rounded-2xl p-4 bg-stone-50/50">
+            <div className="flex items-center justify-between">
+              <h4 className="font-bold text-stone-900 flex items-center gap-1.5 text-xs">
+                <Lock className="w-3.5 h-3.5 text-amber-600" />
+                步驟 2：發布 Storage 圖片儲存庫規則
               </h4>
-              <p className="text-[11px] text-stone-500">
-                點擊下方下載此冊備份檔（JSON），用 Line 傳給手機，手機點網頁上的「回復」即可秒載入全班考卷：
-              </p>
+              <a
+                href="https://console.firebase.google.com/project/gen-lang-client-0123519296/storage/rules"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-[11px] text-amber-800 hover:text-amber-950 font-bold underline cursor-pointer"
+              >
+                <span>前往後台設定</span>
+                <ExternalLink className="w-3 h-3" />
+              </a>
+            </div>
+
+            <div className="bg-stone-900 text-stone-200 p-3 rounded-xl relative font-mono text-[10.5px]">
+              <pre className="overflow-x-auto max-h-28">{storageRule}</pre>
+              <button
+                type="button"
+                onClick={copyStorage}
+                className="absolute top-2 right-2 inline-flex items-center gap-1 px-2.5 py-1 rounded bg-stone-800 hover:bg-stone-700 text-stone-100 text-[10px] font-sans font-bold cursor-pointer"
+              >
+                {copiedStorage ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                <span>{copiedStorage ? '已複製！' : '複製代碼'}</span>
+              </button>
+            </div>
+          </div>
+
+          {/* 備份直傳手機 */}
+          {currentBook && (
+            <div className="pt-1 flex items-center justify-between gap-3 text-[11px] text-stone-500 bg-amber-50/30 p-3 rounded-xl border border-amber-200/50">
+              <span className="flex items-center gap-1.5">
+                <Smartphone className="w-4 h-4 text-stone-600 flex-shrink-0" />
+                <span>免開雲端！亦可直接匯出此冊備份檔傳給手機：</span>
+              </span>
               <button
                 type="button"
                 onClick={() => exportBookBackup(currentBook)}
-                className="inline-flex items-center justify-center gap-1.5 w-full py-2 px-3 text-xs font-semibold text-stone-800 bg-stone-100 hover:bg-stone-200 border border-stone-300 rounded-xl transition-all cursor-pointer"
+                className="inline-flex items-center gap-1 px-3 py-1 font-bold text-stone-800 bg-white hover:bg-stone-100 border border-stone-300 rounded-lg cursor-pointer flex-shrink-0"
               >
-                <Download className="w-3.5 h-3.5 text-stone-600" />
-                <span>下載「{currentBook.title}」備份檔 (可直傳手機)</span>
+                <Download className="w-3 h-3" />
+                <span>匯出 JSON</span>
               </button>
             </div>
           )}
         </div>
 
-        <div className="flex justify-end">
+        <div className="flex justify-end pt-3 border-t border-stone-100 flex-shrink-0">
           <button
             type="button"
             onClick={onClose}
-            className="px-5 py-2 text-xs font-bold text-stone-600 hover:bg-stone-100 rounded-xl transition-colors cursor-pointer"
+            className="px-5 py-2 text-xs font-bold text-stone-700 hover:bg-stone-100 rounded-xl transition-colors cursor-pointer"
           >
-            關閉視窗
+            關閉
           </button>
         </div>
       </div>

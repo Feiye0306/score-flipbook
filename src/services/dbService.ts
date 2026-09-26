@@ -1,21 +1,51 @@
 import {
-  collection,
   doc,
   setDoc,
   deleteDoc,
   onSnapshot,
-  query,
+  getDoc,
 } from 'firebase/firestore';
 import { db, isFirebaseConfigured } from '../config/firebase';
 import type { ExamBook, ScoreImage, StudentFolder } from '../types';
 
 const COLLECTION_NAME = 'score_books';
 const LOCAL_STORAGE_KEY = 'score_flipbook_local_data';
+const MY_BOOK_IDS_KEY = 'score_flipbook_my_ids';
 
 // 狀態：記錄 Firebase 是否報權限錯誤
 export let isCloudPermissionDenied = false;
 
-// 本地存儲輔助 (保證永遠可用)
+// 取得本機登記擁有的冊子 ID 清單
+export function getRegisteredBookIds(): string[] {
+  try {
+    const raw = localStorage.getItem(MY_BOOK_IDS_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function registerBookId(bookId: string): void {
+  try {
+    const ids = new Set(getRegisteredBookIds());
+    ids.add(bookId);
+    localStorage.setItem(MY_BOOK_IDS_KEY, JSON.stringify(Array.from(ids)));
+  } catch (err) {
+    console.warn('註冊冊子 ID 警訊：', err);
+  }
+}
+
+export function unregisterBookId(bookId: string): void {
+  try {
+    const ids = new Set(getRegisteredBookIds());
+    ids.delete(bookId);
+    localStorage.setItem(MY_BOOK_IDS_KEY, JSON.stringify(Array.from(ids)));
+  } catch (err) {
+    console.warn('移除冊子 ID 警訊：', err);
+  }
+}
+
+// 本地快取輔助
 export function getLocalBooks(): Record<string, ExamBook> {
   try {
     const raw = localStorage.getItem(LOCAL_STORAGE_KEY);
@@ -34,13 +64,42 @@ export function saveLocalBooks(books: Record<string, ExamBook>): void {
 }
 
 /**
- * 監聽所有冊子清單 (本地優先 + 雲端同步)
+ * 精準讀取單一冊子 (抗順藤摸瓜：不遍歷全庫，僅單點讀取)
+ */
+export async function fetchSingleBook(bookId: string): Promise<ExamBook | null> {
+  // 1. 先查本地
+  const localMap = getLocalBooks();
+  const localBook = localMap[bookId];
+
+  // 2. 查雲端單一文檔
+  if (isFirebaseConfigured && db) {
+    try {
+      const firestoreDb = db;
+      const docRef = doc(firestoreDb, COLLECTION_NAME, bookId);
+      const snapshot = await getDoc(docRef);
+      if (snapshot.exists()) {
+        const cloudBook = snapshot.data() as ExamBook;
+        // 同步存入本地
+        localMap[bookId] = cloudBook;
+        saveLocalBooks(localMap);
+        registerBookId(bookId);
+        return cloudBook;
+      }
+    } catch (err: any) {
+      console.warn('單點讀取雲端文檔失敗：', err.message);
+    }
+  }
+
+  return localBook || null;
+}
+
+/**
+ * 監聽指定冊子清單 (精確抗爬蟲模式：對每個已註冊 ID 獨立監聽，絕不請求全集合 list)
  */
 export function subscribeBooks(
   onUpdate: (books: ExamBook[]) => void,
   onPermissionWarning?: () => void
 ): () => void {
-  // 先立即觸發一次本地資料，確保介面 0 秒即時渲染，絕不白屏或卡住
   const emitLocal = () => {
     const local = Object.values(getLocalBooks()).sort(
       (a, b) => (b.updatedAt || 0) - (a.updatedAt || 0)
@@ -49,42 +108,93 @@ export function subscribeBooks(
   };
   emitLocal();
 
-  if (isFirebaseConfigured && db) {
+  // 若未啟用 Firebase，直接返回
+  if (!isFirebaseConfigured || !db) {
+    return () => {};
+  }
+
+  const firestoreDb = db;
+  const localMap = getLocalBooks();
+  // 註冊本機現有所有冊子 ID
+  Object.keys(localMap).forEach((id) => registerBookId(id));
+  const bookIds = getRegisteredBookIds();
+
+  const unsubscribes: Array<() => void> = [];
+
+  // 針對使用者擁有的每一本冊子發起精確監聽（完全不需要 list 權限，徹底防順藤摸瓜）
+  bookIds.forEach((bookId) => {
     try {
-      const q = query(collection(db, COLLECTION_NAME));
-      const unsubscribe = onSnapshot(
-        q,
-        (snapshot) => {
-          isCloudPermissionDenied = false;
-          const books: ExamBook[] = [];
-          snapshot.forEach((docSnap) => {
-            books.push(docSnap.data() as ExamBook);
-          });
+      const docRef = doc(firestoreDb, COLLECTION_NAME, bookId);
+      const unsub = onSnapshot(
+        docRef,
+        (snap) => {
+          if (snap.exists()) {
+            isCloudPermissionDenied = false;
+            const updated = snap.data() as ExamBook;
+            const currentLocal = getLocalBooks();
+            currentLocal[updated.id] = updated;
+            saveLocalBooks(currentLocal);
 
-          // 與本地資料合併 (避免雲端剛清空時丟失)
-          const localMap = getLocalBooks();
-          books.forEach((b) => {
-            localMap[b.id] = b;
-          });
-          saveLocalBooks(localMap);
-
-          const finalBooks = Object.values(localMap).sort(
-            (a, b) => (b.updatedAt || 0) - (a.updatedAt || 0)
-          );
-          onUpdate(finalBooks);
+            const sorted = Object.values(currentLocal).sort(
+              (a, b) => (b.updatedAt || 0) - (a.updatedAt || 0)
+            );
+            onUpdate(sorted);
+          }
         },
         (err) => {
-          console.warn('⚠️ Firestore 讀取受限 (Permission Denied)，自動降級為本地優先模式：', err.message);
+          console.warn(`精準監聽冊子 [${bookId}] 受阻：`, err.message);
           isCloudPermissionDenied = true;
           if (onPermissionWarning) onPermissionWarning();
-          emitLocal();
         }
       );
-      return unsubscribe;
+      unsubscribes.push(unsub);
     } catch (err) {
-      console.warn('訂閱例外，回退到本地：', err);
-      emitLocal();
-      return () => {};
+      console.warn('監聽例外：', err);
+    }
+  });
+
+  return () => {
+    unsubscribes.forEach((unsub) => unsub());
+  };
+}
+
+/**
+ * 監聽單一冊子 (訪客專屬模式：只監聽被授權的那一本)
+ */
+export function subscribeSingleBook(
+  bookId: string,
+  onUpdate: (book: ExamBook) => void
+): () => void {
+  registerBookId(bookId);
+
+  // 立即讀取本地快取
+  const localMap = getLocalBooks();
+  if (localMap[bookId]) {
+    onUpdate(localMap[bookId]);
+  }
+
+  if (isFirebaseConfigured && db) {
+    try {
+      const firestoreDb = db;
+      const docRef = doc(firestoreDb, COLLECTION_NAME, bookId);
+      const unsub = onSnapshot(
+        docRef,
+        (snap) => {
+          if (snap.exists()) {
+            const data = snap.data() as ExamBook;
+            const current = getLocalBooks();
+            current[data.id] = data;
+            saveLocalBooks(current);
+            onUpdate(data);
+          }
+        },
+        (err) => {
+          console.warn(`訪客單冊監聽受阻 [${bookId}]：`, err.message);
+        }
+      );
+      return unsub;
+    } catch (err) {
+      console.warn('單冊監聽例外：', err);
     }
   }
 
@@ -100,18 +210,20 @@ export async function saveExamBook(book: ExamBook): Promise<void> {
     updatedAt: Date.now(),
   };
 
-  // 1. 本地立即儲存 (確保 100% 成功，絕不卡死)
+  // 1. 本地立即儲存
+  registerBookId(book.id);
   const local = getLocalBooks();
   local[book.id] = updatedBook;
   saveLocalBooks(local);
 
-  // 2. 異步同步至 Firebase (不阻塞使用者操作)
+  // 2. 異步同步至 Firebase
   if (isFirebaseConfigured && db) {
     try {
       const docRef = doc(db, COLLECTION_NAME, book.id);
       await setDoc(docRef, updatedBook, { merge: true });
+      isCloudPermissionDenied = false;
     } catch (err: any) {
-      console.warn('⚠️ 雲端同步失敗 (目前儲存於本機瀏覽器)：', err.message);
+      console.warn('⚠️ 雲端同步受阻 (儲存於本機暫存中)：', err.message);
       isCloudPermissionDenied = true;
     }
   }
@@ -122,6 +234,7 @@ export async function saveExamBook(book: ExamBook): Promise<void> {
  */
 export async function deleteExamBook(bookId: string): Promise<void> {
   // 1. 本地立即刪除
+  unregisterBookId(bookId);
   const local = getLocalBooks();
   delete local[bookId];
   saveLocalBooks(local);
@@ -145,7 +258,7 @@ export async function appendImagesToStudent(
   studentName: string,
   newImages: ScoreImage[]
 ): Promise<void> {
-  const cleanName = studentName.trim() || '未分類學生';
+  const cleanName = studentName.trim() || '未分類成員';
   const now = Date.now();
 
   const local = getLocalBooks();
@@ -186,7 +299,7 @@ export async function appendImagesToStudent(
 }
 
 /**
- * 刪除學生的單張截圖
+ * 刪除成員的單張截圖
  */
 export async function removeStudentImage(
   bookId: string,
@@ -208,7 +321,7 @@ export async function removeStudentImage(
 }
 
 /**
- * 刪除整個學生與其所有圖片
+ * 刪除整個成員與其所有圖片
  */
 export async function removeStudentFolder(
   bookId: string,

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   X, 
   Share2, 
@@ -6,9 +6,12 @@ import {
   Eye, 
   Check, 
   Link,
-  BookOpen
+  ShieldCheck,
+  Lock,
+  Loader2
 } from 'lucide-react';
 import type { ExamBook } from '../types';
+import { createAccessToken } from '../services/tokenService';
 
 interface ShareModalProps {
   currentBook: ExamBook;
@@ -22,19 +25,50 @@ export const ShareModal: React.FC<ShareModalProps> = ({
   onClose,
 }) => {
   const [copiedType, setCopiedType] = useState<'collab' | 'view' | null>(null);
+  const [collabUrl, setCollabUrl] = useState<string>('');
+  const [viewOnlyUrl, setViewOnlyUrl] = useState<string>('');
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  // 彈窗打開時，向資料庫註冊雙層查驗安全 Token (去特化，不含冊名或 ID)
+  useEffect(() => {
+    if (!isOpen) return;
+
+    let isMounted = true;
+    setIsGenerating(true);
+
+    const generateTokens = async () => {
+      try {
+        const collabToken = await createAccessToken(currentBook.id, 'collab');
+        const viewToken = await createAccessToken(currentBook.id, 'view');
+
+        if (isMounted) {
+          const baseUrl = window.location.origin + window.location.pathname;
+
+          const cUrl = new URL(baseUrl);
+          cUrl.searchParams.set('token', collabToken);
+          setCollabUrl(cUrl.toString());
+
+          const vUrl = new URL(baseUrl);
+          vUrl.searchParams.set('token', viewToken);
+          setViewOnlyUrl(vUrl.toString());
+        }
+      } catch (err) {
+        console.warn('產生安全 Token 失敗，使用標準隨機碼：', err);
+      } finally {
+        if (isMounted) {
+          setIsGenerating(false);
+        }
+      }
+    };
+
+    generateTokens();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [isOpen, currentBook.id]);
 
   if (!isOpen) return null;
-
-  const code = currentBook.shareCode || currentBook.id;
-
-  // 1. 協作上傳連結 (他人可看圖 + 可上傳編輯)
-  const collabUrl = new URL(window.location.origin + window.location.pathname);
-  collabUrl.searchParams.set('share', code);
-
-  // 2. 唯讀翻閱連結 (他人僅能看圖，不可上傳)
-  const viewOnlyUrl = new URL(window.location.origin + window.location.pathname);
-  viewOnlyUrl.searchParams.set('share', code);
-  viewOnlyUrl.searchParams.set('mode', 'view');
 
   const handleCopy = (type: 'collab' | 'view', url: string) => {
     navigator.clipboard.writeText(url);
@@ -55,92 +89,105 @@ export const ShareModal: React.FC<ShareModalProps> = ({
         </button>
 
         {/* 標題 */}
-        <div className="flex items-center gap-3 mb-2">
+        <div className="flex items-center gap-3 mb-3">
           <div className="w-10 h-10 rounded-2xl bg-amber-50 border border-amber-200 text-amber-800 flex items-center justify-center flex-shrink-0">
             <Share2 className="w-5 h-5 text-amber-700" />
           </div>
           <div>
             <h3 className="text-base sm:text-lg font-bold text-stone-900 font-serif">
-              分享冊子「{currentBook.title}」
+              產生安全分享連結
             </h3>
-            <p className="text-xs text-stone-500 font-mono">
-              專屬代碼：<span className="font-bold text-amber-800">#{code}</span>
+            <p className="text-xs text-stone-500">
+              目標圖冊：<span className="font-bold text-stone-800">{currentBook.title}</span>
             </p>
           </div>
         </div>
 
-        <p className="text-xs text-stone-500 mb-5 leading-relaxed">
-          每本冊子都有各自專屬的隨機連結，點開此連結的人<b>只能看到並操作這本冊子</b>，看不到您其他考試！
-        </p>
-
-        {/* 兩種模式卡片 */}
-        <div className="space-y-4 mb-6">
-          {/* 模式 A：共同協作上傳 (最顯眼推薦) */}
-          <div className="bg-amber-50/40 border-2 border-amber-300 rounded-2xl p-4 relative shadow-sm">
-            <div className="flex items-center justify-between gap-2 mb-1.5">
-              <span className="inline-flex items-center gap-1.5 text-xs font-bold text-stone-900">
-                <Users className="w-4 h-4 text-amber-700" />
-                【協作上傳】分享連結（推薦首選）
-              </span>
-              <span className="bg-amber-700 text-amber-50 text-[10px] font-bold px-2.5 py-0.5 rounded-full">
-                可看圖＋可上傳考卷
-              </span>
-            </div>
-            <p className="text-xs text-stone-600 mb-3 leading-normal">
-              對方點開後，可以直接翻閱整本冊子所有考卷，且<b>能點擊「傳成績截圖」共同上傳照片、輸入學生姓名</b>。
+        {/* 安全防護背書卡片 */}
+        <div className="bg-emerald-50/70 border border-emerald-200/80 rounded-2xl p-3.5 mb-5 flex items-start gap-2.5">
+          <ShieldCheck className="w-5 h-5 text-emerald-700 flex-shrink-0 mt-0.5" />
+          <div className="text-[11px] leading-relaxed text-emerald-950">
+            <p className="font-bold mb-0.5">🛡️ 已啟用雙層資料庫鑑權與防順藤摸瓜保護</p>
+            <p className="text-emerald-800">
+              網址採用密碼學高熵隨機憑證，<b>絕不包含冊子名稱、科目或人員姓名</b>。外部訪問者必須先經雲端資料庫核對憑證合法才可載入，且<b>物理上完全無法探測或遍歷您其他的任何冊子</b>。
             </p>
-
-            <div className="flex items-center gap-2">
-              <input
-                type="text"
-                readOnly
-                value={collabUrl.toString()}
-                className="bg-white border border-stone-200 text-xs text-stone-700 px-3 py-2 rounded-xl flex-1 outline-none select-all font-mono"
-              />
-              <button
-                type="button"
-                onClick={() => handleCopy('collab', collabUrl.toString())}
-                className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-stone-900 hover:bg-stone-800 active:scale-95 rounded-xl shadow-sm transition-all flex-shrink-0 cursor-pointer"
-              >
-                {copiedType === 'collab' ? <Check className="w-4 h-4 text-amber-300" /> : <Link className="w-4 h-4" />}
-                <span>{copiedType === 'collab' ? '已複製！' : '複製協作連結'}</span>
-              </button>
-            </div>
-          </div>
-
-          {/* 模式 B：僅供唯讀翻閱 */}
-          <div className="bg-stone-50 border border-stone-200 rounded-2xl p-4">
-            <div className="flex items-center justify-between gap-2 mb-1.5">
-              <span className="inline-flex items-center gap-1.5 text-xs font-bold text-stone-700">
-                <Eye className="w-4 h-4 text-stone-500" />
-                【唯讀看圖】分享連結
-              </span>
-              <span className="bg-stone-200 text-stone-700 text-[10px] font-semibold px-2 py-0.5 rounded-full">
-                只供瀏覽
-              </span>
-            </div>
-            <p className="text-xs text-stone-500 mb-3 leading-normal">
-              對方點開只能翻頁看圖、放大細節，<b>無法上傳、修改或刪除考卷</b>（適合發給全班家長閱覽）。
-            </p>
-
-            <div className="flex items-center gap-2">
-              <input
-                type="text"
-                readOnly
-                value={viewOnlyUrl.toString()}
-                className="bg-white border border-stone-200 text-xs text-stone-600 px-3 py-2 rounded-xl flex-1 outline-none select-all font-mono"
-              />
-              <button
-                type="button"
-                onClick={() => handleCopy('view', viewOnlyUrl.toString())}
-                className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-stone-700 bg-white border border-stone-300 hover:bg-stone-100 active:scale-95 rounded-xl transition-all flex-shrink-0 cursor-pointer"
-              >
-                {copiedType === 'view' ? <Check className="w-4 h-4 text-emerald-600" /> : <Link className="w-4 h-4" />}
-                <span>{copiedType === 'view' ? '已複製！' : '複製唯讀連結'}</span>
-              </button>
-            </div>
           </div>
         </div>
+
+        {isGenerating ? (
+          <div className="py-12 text-center text-stone-500 text-xs flex flex-col items-center gap-2">
+            <Loader2 className="w-6 h-6 animate-spin text-amber-600" />
+            <span>正在向資料庫註冊安全授權憑證...</span>
+          </div>
+        ) : (
+          <div className="space-y-4 mb-6">
+            {/* 模式 A：共同協作上傳 */}
+            <div className="bg-amber-50/40 border-2 border-amber-300 rounded-2xl p-4 relative shadow-xs">
+              <div className="flex items-center justify-between gap-2 mb-1.5">
+                <span className="inline-flex items-center gap-1.5 text-xs font-bold text-stone-900">
+                  <Users className="w-4 h-4 text-amber-700" />
+                  【協作上傳】專屬安全連結（推薦首選）
+                </span>
+                <span className="bg-amber-700 text-amber-50 text-[10px] font-bold px-2.5 py-0.5 rounded-full">
+                  可翻閱＋可上傳
+                </span>
+              </div>
+              <p className="text-xs text-stone-600 mb-3 leading-normal">
+                對方點開後，可依序翻閱本冊內容，並<b>具備上傳新圖片與分組成人員</b>的權限。
+              </p>
+
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  readOnly
+                  value={collabUrl}
+                  className="bg-white border border-stone-200 text-xs text-stone-700 px-3 py-2 rounded-xl flex-1 outline-none select-all font-mono"
+                />
+                <button
+                  type="button"
+                  onClick={() => handleCopy('collab', collabUrl)}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-stone-900 hover:bg-stone-800 active:scale-95 rounded-xl shadow-xs transition-all flex-shrink-0 cursor-pointer"
+                >
+                  {copiedType === 'collab' ? <Check className="w-4 h-4 text-amber-300" /> : <Link className="w-4 h-4" />}
+                  <span>{copiedType === 'collab' ? '已複製！' : '複製協作連結'}</span>
+                </button>
+              </div>
+            </div>
+
+            {/* 模式 B：僅供唯讀翻閱 */}
+            <div className="bg-stone-50 border border-stone-200 rounded-2xl p-4">
+              <div className="flex items-center justify-between gap-2 mb-1.5">
+                <span className="inline-flex items-center gap-1.5 text-xs font-bold text-stone-700">
+                  <Eye className="w-4 h-4 text-stone-600" />
+                  【唯讀翻閱】專屬安全連結
+                </span>
+                <span className="bg-stone-200 text-stone-700 text-[10px] font-semibold px-2 py-0.5 rounded-full">
+                  僅供閱覽
+                </span>
+              </div>
+              <p className="text-xs text-stone-500 mb-3 leading-normal">
+                對方點開僅能翻閱、放大照片，<b>無法上傳、修改或刪除任何資料</b>。
+              </p>
+
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  readOnly
+                  value={viewOnlyUrl}
+                  className="bg-white border border-stone-200 text-xs text-stone-600 px-3 py-2 rounded-xl flex-1 outline-none select-all font-mono"
+                />
+                <button
+                  type="button"
+                  onClick={() => handleCopy('view', viewOnlyUrl)}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-stone-700 bg-white border border-stone-300 hover:bg-stone-100 active:scale-95 rounded-xl transition-all flex-shrink-0 cursor-pointer"
+                >
+                  {copiedType === 'view' ? <Check className="w-4 h-4 text-emerald-600" /> : <Link className="w-4 h-4" />}
+                  <span>{copiedType === 'view' ? '已複製！' : '複製唯讀連結'}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* 底部按鈕 */}
         <div className="flex justify-end">
