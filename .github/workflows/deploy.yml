@@ -35,13 +35,13 @@ jobs:
 
       - name: Build
         env:
-          VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY || 'AIzaSyCT_W5-s7RITEQ5FPB9mWQVQfqBK2dDmjo' }}
-          VITE_FIREBASE_AUTH_DOMAIN: 'gen-lang-client-0123519296.firebaseapp.com'
-          VITE_FIREBASE_PROJECT_ID: 'gen-lang-client-0123519296'
-          VITE_FIREBASE_STORAGE_BUCKET: 'gen-lang-client-0123519296.firebasestorage.app'
-          VITE_FIREBASE_MESSAGING_SENDER_ID: '23298270546'
-          VITE_FIREBASE_APP_ID: '1:23298270546:web:ecd3a234578f2ccc33868b'
-          VITE_FIREBASE_MEASUREMENT_ID: 'G-QJDHT9SBNV'
+          VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY || 'AIzaSyCeeGF_LgY278WEU_Brt3RnfhSEFXbbQa8' }}
+          VITE_FIREBASE_AUTH_DOMAIN: 'my-tools-hub-1fdb1.firebaseapp.com'
+          VITE_FIREBASE_PROJECT_ID: 'my-tools-hub-1fdb1'
+          VITE_FIREBASE_STORAGE_BUCKET: 'my-tools-hub-1fdb1.firebasestorage.app'
+          VITE_FIREBASE_MESSAGING_SENDER_ID: '582521185512'
+          VITE_FIREBASE_APP_ID: '1:582521185512:web:634df5d9155f5eeffbd55d'
+          VITE_FIREBASE_MEASUREMENT_ID: 'G-829TLNH2K3'
         run: npm run build
 
       - name: Setup Pages

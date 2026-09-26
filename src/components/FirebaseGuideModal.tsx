@@ -96,7 +96,7 @@ service firebase.storage {
               雲端開通與安全防護說明
             </h3>
             <p className="text-xs text-stone-500">
-              專案 ID：<span className="font-mono text-amber-900 font-bold">gen-lang-client-0123519296</span>
+              專案 ID：<span className="font-mono text-amber-900 font-bold">my-tools-hub-1fdb1</span>
             </p>
           </div>
         </div>
@@ -121,7 +121,7 @@ service firebase.storage {
                 步驟 1：發布 Firestore 資料庫規則（防順藤摸瓜）
               </h4>
               <a
-                href="https://console.firebase.google.com/project/gen-lang-client-0123519296/firestore/rules"
+                href="https://console.firebase.google.com/project/my-tools-hub-1fdb1/firestore/rules"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1 text-[11px] text-amber-800 hover:text-amber-950 font-bold underline cursor-pointer"
@@ -152,7 +152,7 @@ service firebase.storage {
                 步驟 2：發布 Storage 圖片儲存庫規則
               </h4>
               <a
-                href="https://console.firebase.google.com/project/gen-lang-client-0123519296/storage/rules"
+                href="https://console.firebase.google.com/project/my-tools-hub-1fdb1/storage/rules"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1 text-[11px] text-amber-800 hover:text-amber-950 font-bold underline cursor-pointer"
