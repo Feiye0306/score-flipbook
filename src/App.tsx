@@ -344,8 +344,8 @@ export const App: React.FC = () => {
                     <span>返回冊子書架</span>
                   </button>
                   <span className="text-stone-300">·</span>
-                  <span className={`text-[10px] sm:text-[11px] font-bold px-2 py-0.5 rounded border ${getBookTheme(currentBook.id, currentBook.title).badgeClass}`}>
-                    圖文冊 · {getBookTheme(currentBook.id, currentBook.title).name}
+                  <span className={`text-[10px] sm:text-[11px] font-bold px-2 py-0.5 rounded border ${getBookTheme(currentBook.id, currentBook.title).accentLight} ${getBookTheme(currentBook.id, currentBook.title).accentText} ${getBookTheme(currentBook.id, currentBook.title).accentBorder}`}>
+                    圖文冊 · {getBookTheme(currentBook.id, currentBook.title).label}
                   </span>
                 </div>
 
