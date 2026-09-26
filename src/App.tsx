@@ -332,32 +332,32 @@ export const App: React.FC = () => {
           /* 【單冊名單管理模式】：Murmurs 雜誌高級感看板 + 學生卡片清單 */
           <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-150">
             {/* 冊子資訊看板 (大氣排版、超大標題、呼吸留白) */}
-            <div className="bg-white/80 backdrop-blur-xs rounded-3xl border border-[#E8E6E1] p-6 sm:p-8 shadow-xs flex flex-col lg:flex-row lg:items-end justify-between gap-6">
+            <div className="bg-[#F6F9FB] rounded-3xl border border-[#D6E1EA] p-6 sm:p-8 shadow-xs flex flex-col lg:flex-row lg:items-end justify-between gap-6">
               <div className="space-y-2 max-w-2xl">
                 {/* 頂部精緻麵包屑導航 */}
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
                     onClick={() => setActiveTab('shelf')}
-                    className="inline-flex items-center gap-1.5 text-xs font-bold text-stone-500 hover:text-[#111111] transition-colors cursor-pointer"
+                    className="inline-flex items-center gap-1.5 text-xs font-bold text-stone-500 hover:text-[#16202A] transition-colors cursor-pointer"
                   >
                     <ArrowLeft className="w-3.5 h-3.5" />
                     <span>返回冊子書架</span>
                   </button>
                   <span className="text-stone-300">/</span>
-                  <span className="text-xs font-medium text-stone-400">
-                    目前瀏覽圖冊
+                  <span className="text-xs font-bold px-2.5 py-0.5 rounded-full text-white bg-[#8A5638] shadow-2xs">
+                    圖文冊
                   </span>
                 </div>
 
-                {/* 當前頁面的名字：超大、突出、極具藝術氣質的優雅襯線字體 */}
-                <h1 className="text-3xl sm:text-4xl lg:text-5xl font-serif font-extrabold text-[#111111] tracking-tight leading-tight">
+                {/* 當前頁面的名字：超大、突出、深海軍藍黑優雅襯線字體 */}
+                <h1 className="text-3xl sm:text-4xl lg:text-5xl font-serif font-black text-[#16202A] tracking-tight leading-tight">
                   {currentBook.title}
                 </h1>
 
                 {/* 元數據統計與修訂時間 */}
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs sm:text-sm text-stone-500 pt-1 font-medium">
-                  <span className="font-semibold text-stone-800">
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs sm:text-sm text-stone-600 pt-1 font-medium">
+                  <span className="font-semibold text-[#16202A]">
                     名單 {studentCount} 人 · 共 {Object.values(currentBook.students || {}).reduce((acc, s) => acc + (s.images?.length || 0), 0)} 張圖
                   </span>
                   {currentBook.updatedAt && (
@@ -372,15 +372,15 @@ export const App: React.FC = () => {
                 </div>
               </div>
 
-              {/* 橫幅主要動作區：Murmurs 炭黑膠囊按鈕與細線輪廓按鈕 */}
+              {/* 橫幅主要動作區：深海軍黑膠囊按鈕與細線輪廓按鈕 */}
               <div className="flex flex-wrap items-center gap-2.5 pt-2 lg:pt-0">
                 {studentCount > 0 ? (
                   <>
-                    {/* 主翻閱按鈕：深邃炭黑圓角膠囊 */}
+                    {/* 主翻閱按鈕：深海軍黑圓角膠囊 */}
                     <button
                       type="button"
                       onClick={() => handleOpenViewerForBook(currentBook)}
-                      className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-6 py-3 text-xs sm:text-sm font-bold text-white bg-[#111111] hover:bg-[#262626] rounded-full shadow-sm transition-all active:scale-95 cursor-pointer whitespace-nowrap"
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-6 py-3 text-xs sm:text-sm font-bold text-white bg-[#16202A] hover:bg-[#233140] rounded-full shadow-sm transition-all active:scale-95 cursor-pointer whitespace-nowrap"
                       title="從第 1 位成員開始全螢幕依序翻閱"
                     >
                       <BookOpen className="w-4 h-4 text-white" />
@@ -407,7 +407,7 @@ export const App: React.FC = () => {
                           }
                         }}
                         disabled={isDownloadingBook}
-                        className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-4 sm:px-5 py-2.5 text-xs sm:text-sm font-semibold text-[#111111] bg-white hover:bg-stone-50 border border-[#DCD9D2] hover:border-[#111111] rounded-full shadow-2xs transition-all cursor-pointer whitespace-nowrap disabled:opacity-50"
+                        className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-4 sm:px-5 py-2.5 text-xs sm:text-sm font-semibold text-[#16202A] bg-white hover:bg-stone-50 border border-[#D6E1EA] hover:border-[#16202A] rounded-full shadow-2xs transition-all cursor-pointer whitespace-nowrap disabled:opacity-50"
                         title="打包下載本冊所有圖片為 Zip 壓縮檔 (依成員自動分類資料夾)"
                       >
                         {isDownloadingBook ? (
@@ -430,7 +430,7 @@ export const App: React.FC = () => {
                           setShareModalBook(currentBook);
                           setIsShareModalOpen(true);
                         }}
-                        className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-4 sm:px-5 py-2.5 text-xs sm:text-sm font-semibold text-[#111111] bg-white hover:bg-stone-50 border border-[#DCD9D2] hover:border-[#111111] rounded-full shadow-2xs transition-all cursor-pointer whitespace-nowrap"
+                        className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-4 sm:px-5 py-2.5 text-xs sm:text-sm font-semibold text-[#16202A] bg-white hover:bg-stone-50 border border-[#D6E1EA] hover:border-[#16202A] rounded-full shadow-2xs transition-all cursor-pointer whitespace-nowrap"
                         title="產生本冊專屬連結，發給他人一起看圖與上傳"
                       >
                         <Users className="w-4 h-4 text-stone-700" />
@@ -441,7 +441,7 @@ export const App: React.FC = () => {
                         <button
                           type="button"
                           onClick={() => setIsUploadOpen(true)}
-                          className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-4 sm:px-5 py-2.5 text-xs sm:text-sm font-semibold text-[#111111] bg-white hover:bg-stone-50 border border-[#DCD9D2] hover:border-[#111111] rounded-full shadow-2xs transition-all cursor-pointer whitespace-nowrap"
+                          className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-4 sm:px-5 py-2.5 text-xs sm:text-sm font-semibold text-[#16202A] bg-white hover:bg-stone-50 border border-[#D6E1EA] hover:border-[#16202A] rounded-full shadow-2xs transition-all cursor-pointer whitespace-nowrap"
                         >
                           <UploadCloud className="w-4 h-4 text-stone-700" />
                           <span>＋ 上傳</span>

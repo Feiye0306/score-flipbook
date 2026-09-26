@@ -67,13 +67,13 @@ export const Navbar: React.FC<NavbarProps> = ({
   };
 
   return (
-    <header className="sticky top-0 z-30 bg-[#FBF9F5]/95 backdrop-blur-md border-b border-[#E8E6E1] shadow-2xs transition-colors">
+    <header className="sticky top-0 z-30 bg-[#EDE7DC]/90 backdrop-blur-md border-b border-[#DDD5C7] shadow-2xs transition-colors">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 sm:h-16 flex items-center justify-between gap-3">
         {/* 左側：品牌標誌與標籤 */}
         <div className="flex items-center gap-2.5 sm:gap-3.5 min-w-0">
           <div 
             onClick={() => onTabChange?.('shelf')}
-            className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#111111] flex items-center justify-center text-white shadow-2xs flex-shrink-0 cursor-pointer hover:bg-[#262626] transition-colors"
+            className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#16202A] flex items-center justify-center text-white shadow-2xs flex-shrink-0 cursor-pointer hover:bg-[#233140] transition-colors"
             title="回到圖冊陳列相冊"
           >
             <BookOpen className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -83,7 +83,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             <div className="flex items-center gap-2">
               <h1 
                 onClick={() => onTabChange?.('shelf')}
-                className="font-extrabold text-[#111111] text-sm sm:text-base leading-tight flex items-center gap-1 font-serif cursor-pointer hover:text-stone-600 transition-colors truncate"
+                className="font-extrabold text-[#16202A] text-sm sm:text-base leading-tight flex items-center gap-1 font-serif cursor-pointer hover:text-stone-600 transition-colors truncate"
               >
                 雲端圖文翻閱冊
               </h1>
@@ -197,7 +197,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               <button
                 type="button"
                 onClick={() => exportBookBackup(currentBook)}
-                className="hidden md:inline-flex items-center gap-1 px-3.5 py-1.5 text-xs font-semibold text-[#111111] bg-white border border-[#DCD9D2] hover:border-[#111111] rounded-full shadow-2xs transition-all cursor-pointer"
+                className="hidden md:inline-flex items-center gap-1 px-3.5 py-1.5 text-xs font-semibold text-[#16202A] bg-white border border-[#D6E1EA] hover:border-[#16202A] rounded-full shadow-2xs transition-all cursor-pointer"
                 title="下載此冊完整資料備份 (JSON)"
               >
                 <Download className="w-3.5 h-3.5 text-stone-600" />
@@ -208,7 +208,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="hidden md:inline-flex items-center gap-1 px-3.5 py-1.5 text-xs font-semibold text-[#111111] bg-white border border-[#DCD9D2] hover:border-[#111111] rounded-full shadow-2xs transition-all cursor-pointer"
+                className="hidden md:inline-flex items-center gap-1 px-3.5 py-1.5 text-xs font-semibold text-[#16202A] bg-white border border-[#D6E1EA] hover:border-[#16202A] rounded-full shadow-2xs transition-all cursor-pointer"
                 title="從備份檔回復/匯入成績冊 (JSON)"
               >
                 <Upload className="w-3.5 h-3.5 text-stone-600" />
@@ -219,7 +219,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               <button
                 type="button"
                 onClick={() => onOpenShare?.()}
-                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-[#111111] bg-white hover:bg-stone-50 border border-[#DCD9D2] hover:border-[#111111] rounded-full shadow-2xs transition-all cursor-pointer whitespace-nowrap"
+                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-[#16202A] bg-white hover:bg-stone-50 border border-[#D6E1EA] hover:border-[#16202A] rounded-full shadow-2xs transition-all cursor-pointer whitespace-nowrap"
                 title="取得分享連結 (可選協作上傳或唯讀翻閱)"
               >
                 <Share2 className="w-3.5 h-3.5 text-stone-600" />
@@ -232,7 +232,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             <button
               type="button"
               onClick={onOpenUpload}
-              className="inline-flex items-center gap-1.5 px-4 py-1.5 text-xs font-bold text-white bg-[#111111] hover:bg-[#262626] active:scale-95 rounded-full shadow-2xs transition-all cursor-pointer whitespace-nowrap"
+              className="inline-flex items-center gap-1.5 px-4 py-1.5 text-xs font-bold text-white bg-[#16202A] hover:bg-[#233140] active:scale-95 rounded-full shadow-2xs transition-all cursor-pointer whitespace-nowrap"
             >
               <UploadCloud className="w-3.5 h-3.5 text-white" />
               <span className="hidden sm:inline">傳成績截圖</span>

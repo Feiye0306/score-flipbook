@@ -6,8 +6,8 @@
 
 @layer base {
   body {
-    @apply antialiased text-[#111111] min-h-screen selection:bg-[#111111] selection:text-white;
-    background-color: #FBF9F5;
+    @apply antialiased text-[#16202A] min-h-screen selection:bg-[#16202A] selection:text-white;
+    background-color: #EDE7DC;
     font-family: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans TC", sans-serif;
   }
 
