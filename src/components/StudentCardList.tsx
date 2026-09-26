@@ -57,23 +57,23 @@ export const StudentCardList: React.FC<StudentCardListProps> = ({
 
   if (students.length === 0) {
     return (
-      <div className="text-center py-16 px-4 bg-white rounded-3xl border border-stone-200/80 shadow-sm my-4">
-        <div className="w-16 h-16 mx-auto rounded-2xl bg-amber-50 flex items-center justify-center text-amber-800 mb-3 shadow-sm border border-amber-200/60">
-          <UploadCloud className="w-8 h-8 text-amber-700" />
+      <div className="text-center py-8 sm:py-14 px-4 bg-white rounded-2xl border border-stone-200/80 shadow-sm my-2 sm:my-4">
+        <div className="w-12 h-12 sm:w-14 sm:h-14 mx-auto rounded-2xl bg-amber-50 flex items-center justify-center text-amber-800 mb-2.5 shadow-sm border border-amber-200/60">
+          <UploadCloud className="w-6 h-6 sm:w-7 sm:h-7 text-amber-700" />
         </div>
-        <h3 className="text-base font-bold text-stone-900 font-serif">
-          冊子「{currentBook.title}」尚無成績截圖
+        <h3 className="text-sm sm:text-base font-bold text-stone-900 font-serif">
+          此冊尚無考卷圖片
         </h3>
-        <p className="text-xs text-stone-500 max-w-sm mx-auto mt-1 mb-5">
-          直接點擊下方按鈕上傳考卷或成績圖片，系統會自動辨識學生姓名並排好翻閱順序。
+        <p className="text-xs text-stone-500 max-w-xs sm:max-w-sm mx-auto mt-1 mb-4">
+          點擊下方按鈕上傳考卷或成績圖片，系統會自動歸納成冊。
         </p>
         <button
           type="button"
           onClick={onOpenUpload}
-          className="inline-flex items-center gap-2 px-6 py-2.5 text-xs font-bold text-white bg-stone-900 hover:bg-stone-800 rounded-xl shadow-sm transition-all cursor-pointer"
+          className="inline-flex items-center gap-2 px-5 py-2.5 text-xs font-bold text-white bg-stone-900 hover:bg-stone-800 rounded-xl shadow-sm transition-all active:scale-95 cursor-pointer"
         >
           <UploadCloud className="w-4 h-4 text-amber-400" />
-          <span>立即上傳成績圖</span>
+          <span>＋ 立即上傳考卷圖</span>
         </button>
       </div>
     );

@@ -11,12 +11,13 @@ import {
   Check,
   Download,
   Upload,
-  Layers,
+  AlertTriangle,
   X
 } from 'lucide-react';
 import type { ExamBook } from '../types';
 import { isFirebaseConfigured } from '../config/firebase';
 import { exportBookBackup, importBookBackup } from '../services/backupService';
+import { isCloudPermissionDenied } from '../services/dbService';
 
 interface NavbarProps {
   books: ExamBook[];
@@ -29,6 +30,7 @@ interface NavbarProps {
   onSearchChange: (q: string) => void;
   onOpenUpload: () => void;
   onOpenShare?: () => void;
+  onOpenCloudGuide?: () => void;
   activeTab?: 'shelf' | 'book';
   onTabChange?: (tab: 'shelf' | 'book') => void;
   isViewOnly?: boolean;
@@ -46,6 +48,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onSearchChange,
   onOpenUpload,
   onOpenShare,
+  onOpenCloudGuide,
   activeTab = 'shelf',
   onTabChange,
   isViewOnly = false,
@@ -65,111 +68,112 @@ export const Navbar: React.FC<NavbarProps> = ({
 
   return (
     <header className="sticky top-0 z-30 bg-[#FDFCF7]/95 backdrop-blur-md border-b border-stone-200/90 shadow-sm transition-colors">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-3">
-        {/* 左側：品牌標誌與書架/冊子切換 */}
-        <div className="flex items-center gap-3">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-14 sm:h-16 flex items-center justify-between gap-2 sm:gap-3">
+        {/* 左側：品牌標誌與標籤 */}
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
           <div 
             onClick={() => onTabChange?.('shelf')}
-            className="w-10 h-10 rounded-xl bg-stone-900 border border-stone-800 flex items-center justify-center text-amber-400 shadow-sm flex-shrink-0 cursor-pointer hover:bg-stone-800 transition-colors"
+            className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-stone-900 border border-stone-800 flex items-center justify-center text-amber-400 shadow-sm flex-shrink-0 cursor-pointer hover:bg-stone-800 transition-colors"
             title="回到成績冊陳列書架"
           >
-            <BookOpen className="w-5 h-5" />
+            <BookOpen className="w-4 h-4 sm:w-5 sm:h-5" />
           </div>
 
-          <div>
-            <div className="flex items-center gap-2">
+          <div className="min-w-0">
+            <div className="flex items-center gap-1.5 sm:gap-2">
               <h1 
                 onClick={() => onTabChange?.('shelf')}
-                className="font-bold text-stone-900 text-base sm:text-lg leading-tight flex items-center gap-1.5 font-serif cursor-pointer hover:text-amber-800 transition-colors"
+                className="font-bold text-stone-900 text-sm sm:text-lg leading-tight flex items-center gap-1 font-serif cursor-pointer hover:text-amber-800 transition-colors truncate"
               >
-                雲端成績翻閱冊
+                成績翻閱冊
               </h1>
-              <span className={`inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full ${
-                isFirebaseConfigured 
-                  ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' 
-                  : 'bg-amber-50 text-amber-800 border border-amber-200'
-              }`}>
-                {isFirebaseConfigured ? (
+
+              {/* 雲端同步狀態標籤 */}
+              <button
+                type="button"
+                onClick={onOpenCloudGuide}
+                className={`inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-medium px-2 py-0.5 rounded-full flex-shrink-0 cursor-pointer ${
+                  isCloudPermissionDenied
+                    ? 'bg-amber-100 text-amber-900 border border-amber-300'
+                    : isFirebaseConfigured
+                    ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                    : 'bg-stone-100 text-stone-700 border border-stone-200'
+                }`}
+                title="點擊查看雲端同步與權限設定"
+              >
+                {isCloudPermissionDenied ? (
+                  <>
+                    <AlertTriangle className="w-3 h-3 text-amber-700 animate-bounce" />
+                    <span>本機暫存中</span>
+                  </>
+                ) : isFirebaseConfigured ? (
                   <>
                     <Cloud className="w-3 h-3 text-emerald-600 animate-pulse" />
-                    雲端同步
+                    <span className="hidden sm:inline">雲端同步</span>
+                    <span className="sm:hidden">雲端</span>
                   </>
                 ) : (
                   <>
-                    <HardDrive className="w-3 h-3 text-amber-600" />
-                    本地暫存
+                    <HardDrive className="w-3 h-3 text-stone-500" />
+                    <span>本地模式</span>
                   </>
                 )}
-              </span>
+              </button>
             </div>
 
-            {/* 視圖切換標籤：書架 vs 當前冊子 */}
-            <div className="flex items-center gap-1.5 mt-0.5">
-              {!isSingleBookMode && (
-                <div className="flex items-center bg-stone-100/90 p-0.5 rounded-lg border border-stone-200/80">
-                  <button
-                    type="button"
-                    onClick={() => onTabChange?.('shelf')}
-                    className={`px-2 py-0.5 text-[11px] font-bold rounded-md transition-all cursor-pointer ${
-                      activeTab === 'shelf'
-                        ? 'bg-white text-stone-900 shadow-sm'
-                        : 'text-stone-500 hover:text-stone-800'
-                    }`}
-                  >
-                    📚 冊子書架 ({books.length})
-                  </button>
-                  {currentBook && (
+            {/* 書架 vs 當前冊子 導航標籤 */}
+            {!isSingleBookMode && (
+              <div className="flex items-center gap-1 mt-0.5">
+                <button
+                  type="button"
+                  onClick={() => onTabChange?.('shelf')}
+                  className={`text-[10px] sm:text-[11px] font-bold px-1.5 py-0.5 rounded transition-colors cursor-pointer ${
+                    activeTab === 'shelf'
+                      ? 'text-amber-900 bg-amber-50 font-black'
+                      : 'text-stone-500 hover:text-stone-800'
+                  }`}
+                >
+                  書架 ({books.length})
+                </button>
+                {currentBook && (
+                  <>
+                    <span className="text-stone-300 text-[10px]">/</span>
                     <button
                       type="button"
                       onClick={() => onTabChange?.('book')}
-                      className={`px-2 py-0.5 text-[11px] font-bold rounded-md transition-all cursor-pointer truncate max-w-[140px] sm:max-w-[180px] ${
+                      className={`text-[10px] sm:text-[11px] font-bold px-1.5 py-0.5 rounded transition-colors cursor-pointer truncate max-w-[120px] sm:max-w-[200px] ${
                         activeTab === 'book'
-                          ? 'bg-white text-stone-900 shadow-sm'
+                          ? 'text-amber-900 bg-amber-50 font-black'
                           : 'text-stone-500 hover:text-stone-800'
                       }`}
                     >
-                      📖 {currentBook.title}
+                      {currentBook.title}
                     </button>
-                  )}
-                </div>
-              )}
-
-              {isSingleBookMode && currentBook && (
-                <span className="text-xs font-bold text-amber-900 bg-amber-50 border border-amber-200 px-2.5 py-0.5 rounded-md truncate max-w-[200px] sm:max-w-[320px]">
-                  📖 {currentBook.title} (專屬協作模式)
-                </span>
-              )}
-            </div>
+                  </>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
-        {/* 中間：搜尋框 (當在單冊名單時可用) */}
+        {/* 中間：搜尋框 (僅在單冊名單且桌面版顯示) */}
         {activeTab === 'book' && (
-          <div className="hidden md:flex items-center flex-1 max-w-xs mx-4">
+          <div className="hidden lg:flex items-center flex-1 max-w-xs mx-3">
             <div className="relative w-full">
-              <Search className="w-4 h-4 text-stone-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <Search className="w-3.5 h-3.5 text-stone-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
                 placeholder="搜尋學生名字..."
                 value={searchQuery}
                 onChange={(e) => onSearchChange(e.target.value)}
-                className="w-full pl-9 pr-3 py-1.5 text-xs bg-stone-100 hover:bg-stone-200/60 focus:bg-white border border-transparent focus:border-amber-400 rounded-lg outline-none transition-all text-stone-800 placeholder-stone-400"
+                className="w-full pl-8 pr-3 py-1 text-xs bg-stone-100 focus:bg-white border border-transparent focus:border-amber-400 rounded-lg outline-none text-stone-800"
               />
-              {searchQuery && (
-                <button
-                  type="button"
-                  onClick={() => onSearchChange('')}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              )}
             </div>
           </div>
         )}
 
-        {/* 右側：動作按鈕群 */}
-        <div className="flex items-center gap-2">
+        {/* 右側：動作按鈕群 (手機極致精簡防折行) */}
+        <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
           {/* 隱藏的還原備份檔案選擇器 */}
           <input
             type="file"
@@ -193,37 +197,37 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           {currentBook && (
             <>
-              {/* 匯出備份按鈕 */}
+              {/* 桌機版備份按鈕 */}
               <button
                 type="button"
                 onClick={() => exportBookBackup(currentBook)}
-                className="hidden sm:inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-stone-600 bg-white border border-stone-200 hover:bg-stone-50 rounded-lg shadow-sm transition-all"
+                className="hidden md:inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-stone-600 bg-white border border-stone-200 hover:bg-stone-50 rounded-lg shadow-sm transition-all"
                 title="下載此冊完整資料備份 (JSON)"
               >
                 <Download className="w-3.5 h-3.5 text-stone-500" />
                 <span>備份</span>
               </button>
 
-              {/* 回復備份按鈕 */}
+              {/* 桌機版回復按鈕 */}
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="hidden sm:inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-stone-600 bg-white border border-stone-200 hover:bg-stone-50 rounded-lg shadow-sm transition-all"
+                className="hidden md:inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-stone-600 bg-white border border-stone-200 hover:bg-stone-50 rounded-lg shadow-sm transition-all"
                 title="從備份檔回復/匯入成績冊 (JSON)"
               >
                 <Upload className="w-3.5 h-3.5 text-stone-500" />
                 <span>回復</span>
               </button>
 
-              {/* 分享此冊 (協作/唯讀) */}
+              {/* 分享本冊 */}
               <button
                 type="button"
                 onClick={() => onOpenShare?.()}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-amber-900 bg-amber-50 hover:bg-amber-100 border border-amber-200/80 rounded-lg shadow-sm transition-all cursor-pointer"
+                className="inline-flex items-center gap-1 px-2.5 sm:px-3 py-1.5 text-xs font-bold text-amber-900 bg-amber-50 hover:bg-amber-100 border border-amber-200/80 rounded-lg shadow-sm transition-all cursor-pointer whitespace-nowrap"
                 title="取得分享連結 (可選協作上傳或唯讀翻閱)"
               >
                 <Share2 className="w-3.5 h-3.5 text-amber-700" />
-                <span>分享本冊</span>
+                <span>分享</span>
               </button>
             </>
           )}
@@ -232,41 +236,26 @@ export const Navbar: React.FC<NavbarProps> = ({
             <button
               type="button"
               onClick={onOpenUpload}
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold text-white bg-stone-900 hover:bg-stone-800 active:scale-95 rounded-lg shadow-sm transition-all cursor-pointer"
+              className="inline-flex items-center gap-1 px-2.5 sm:px-3.5 py-1.5 text-xs font-bold text-white bg-stone-900 hover:bg-stone-800 active:scale-95 rounded-lg shadow-sm transition-all cursor-pointer whitespace-nowrap"
             >
-              <UploadCloud className="w-4 h-4 text-amber-400" />
-              <span>傳成績截圖</span>
+              <UploadCloud className="w-3.5 h-3.5 text-amber-400" />
+              <span className="hidden sm:inline">傳成績截圖</span>
+              <span className="sm:hidden">上傳</span>
             </button>
           )}
         </div>
       </div>
 
-      {/* 手機版搜尋列 */}
-      {activeTab === 'book' && (
-        <div className="md:hidden px-4 pb-2">
-          <div className="relative w-full">
-            <Search className="w-3.5 h-3.5 text-stone-400 absolute left-3 top-1/2 -translate-y-1/2" />
-            <input
-              type="text"
-              placeholder="搜尋學生姓名..."
-              value={searchQuery}
-              onChange={(e) => onSearchChange(e.target.value)}
-              className="w-full pl-8 pr-3 py-1 text-xs bg-stone-100 focus:bg-white border border-transparent focus:border-amber-400 rounded-lg outline-none text-stone-800 placeholder-stone-400"
-            />
-          </div>
-        </div>
-      )}
-
       {/* 新增冊子對話框 */}
       {isCreating && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-stone-950/40 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6 animate-in fade-in zoom-in-95 duration-150 border border-stone-200">
+          <div className="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6 border border-stone-200">
             <h3 className="text-base font-bold text-stone-900 mb-1 flex items-center gap-2 font-serif">
               <BookOpen className="w-5 h-5 text-amber-700" />
               新增考試冊子
             </h3>
             <p className="text-xs text-stone-500 mb-4">
-              例如：「113第一次段考數學」、「九月模考自然」等，方便將整場考試集合在一起。
+              例如：「113第一次段考數學」、「九月模考自然」等。
             </p>
             <form onSubmit={handleCreate}>
               <input

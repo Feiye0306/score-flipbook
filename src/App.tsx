@@ -14,7 +14,8 @@ import { UploadModal } from './components/UploadModal';
 import { FlipViewerModal } from './components/FlipViewerModal';
 import { StudentPrivateView } from './components/StudentPrivateView';
 import { ShareModal } from './components/ShareModal';
-import { BookOpen, Sparkles, UploadCloud, Layers, Users, ArrowLeft } from 'lucide-react';
+import { FirebaseGuideModal } from './components/FirebaseGuideModal';
+import { BookOpen, UploadCloud, Users, ArrowLeft } from 'lucide-react';
 
 export const App: React.FC = () => {
   const [books, setBooks] = useState<ExamBook[]>([]);
@@ -28,6 +29,7 @@ export const App: React.FC = () => {
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [shareModalBook, setShareModalBook] = useState<ExamBook | null>(null);
+  const [isGuideOpen, setIsGuideOpen] = useState(false);
   const [viewerStudent, setViewerStudent] = useState<string | null>(null);
   const [viewerPageIndex, setViewerPageIndex] = useState(0);
   const [isViewOnly, setIsViewOnly] = useState(false);
@@ -216,6 +218,7 @@ export const App: React.FC = () => {
           setShareModalBook(currentBook);
           setIsShareModalOpen(true);
         }}
+        onOpenCloudGuide={() => setIsGuideOpen(true)}
         activeTab={activeTab}
         onTabChange={setActiveTab}
         isViewOnly={isViewOnly}
@@ -223,11 +226,11 @@ export const App: React.FC = () => {
       />
 
       {/* 主要內容區 */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-8">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-7">
         {books.length === 0 ? (
           <div className="text-center py-20">
             <BookOpen className="w-12 h-12 text-stone-300 mx-auto mb-3" />
-            <p className="text-sm text-stone-500">正在載入雲端測驗冊子...</p>
+            <p className="text-sm text-stone-500">正在載入測驗冊子...</p>
           </div>
         ) : activeTab === 'shelf' ? (
           /* 【書架視圖模式】：冊子排列陳列，點擊直接開卷看圖與翻頁 */
@@ -253,11 +256,11 @@ export const App: React.FC = () => {
             isViewOnly={isViewOnly}
           />
         ) : currentBook ? (
-          /* 【單冊名單管理模式】：溫潤紙質風格看板 + 學生卡片清單 */
-          <div className="space-y-5 sm:space-y-6 animate-in fade-in duration-150">
-            {/* 冊子資訊看板 (溫潤紙質風取代原本刺眼的紫色 Banner) */}
-            <div className="bg-white rounded-2xl border border-stone-200/90 p-5 sm:p-6 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-              <div className="space-y-1.5">
+          /* 【單冊名單管理模式】：手機深度特化紙質風格看板 + 學生卡片清單 */
+          <div className="space-y-4 sm:space-y-6 animate-in fade-in duration-150">
+            {/* 冊子資訊看板 (手機/電腦極致自適應) */}
+            <div className="bg-white rounded-2xl border border-stone-200/90 p-4 sm:p-6 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+              <div className="space-y-1 sm:space-y-1.5">
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
@@ -268,7 +271,7 @@ export const App: React.FC = () => {
                     <span>返回冊子書架</span>
                   </button>
                   <span className="text-stone-300">·</span>
-                  <span className="text-[11px] font-bold text-amber-800 bg-amber-50 border border-amber-200/70 px-2 py-0.5 rounded">
+                  <span className="text-[10px] sm:text-[11px] font-bold text-amber-800 bg-amber-50 border border-amber-200/70 px-2 py-0.5 rounded">
                     測驗冊
                   </span>
                   {currentBook.shareCode && (
@@ -278,7 +281,7 @@ export const App: React.FC = () => {
                   )}
                 </div>
 
-                <h2 className="text-xl sm:text-2xl font-bold text-stone-900 font-serif tracking-tight">
+                <h2 className="text-lg sm:text-2xl font-bold text-stone-900 font-serif tracking-tight">
                   {currentBook.title}
                 </h2>
                 <p className="text-xs text-stone-500">
@@ -286,44 +289,70 @@ export const App: React.FC = () => {
                 </p>
               </div>
 
-              {/* 橫幅主要動作區 */}
-              <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 pt-1 lg:pt-0">
-                {/* 核心功能：直接開始整冊翻閱 */}
-                <button
-                  type="button"
-                  onClick={() => handleOpenViewerForBook(currentBook)}
-                  disabled={studentCount === 0}
-                  className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-4 py-2.5 text-xs font-bold text-white bg-stone-900 hover:bg-stone-800 disabled:opacity-40 disabled:pointer-events-none rounded-xl shadow-sm transition-all active:scale-95 cursor-pointer whitespace-nowrap"
-                  title="從第 1 位學生開始全螢幕依序翻閱整冊考卷"
-                >
-                  <BookOpen className="w-4 h-4 text-amber-400" />
-                  <span>📖 開始翻閱全冊</span>
-                </button>
+              {/* 橫幅主要動作區：手機版友善排版 (絕不碎裂、絕不折行) */}
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 pt-2 lg:pt-0 w-full lg:w-auto">
+                {studentCount > 0 ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => handleOpenViewerForBook(currentBook)}
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 text-xs font-bold text-white bg-stone-900 hover:bg-stone-800 rounded-xl shadow-sm transition-all active:scale-95 cursor-pointer whitespace-nowrap"
+                      title="從第 1 位學生開始全螢幕依序翻閱整冊考卷"
+                    >
+                      <BookOpen className="w-4 h-4 text-amber-400" />
+                      <span>📖 開始翻閱全冊 ({studentCount}人)</span>
+                    </button>
 
-                {/* 分享本冊協作 */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShareModalBook(currentBook);
-                    setIsShareModalOpen(true);
-                  }}
-                  className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-4 py-2.5 text-xs font-bold text-amber-900 bg-amber-50 hover:bg-amber-100 border border-amber-200/80 rounded-xl shadow-sm transition-all active:scale-95 cursor-pointer whitespace-nowrap"
-                  title="產生本冊專屬連結，發給他人一起看圖與上傳"
-                >
-                  <Users className="w-4 h-4 text-amber-700" />
-                  <span>👥 分享本冊協作</span>
-                </button>
+                    <div className="flex items-center gap-2 w-full sm:w-auto">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShareModalBook(currentBook);
+                          setIsShareModalOpen(true);
+                        }}
+                        className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 text-xs font-bold text-amber-900 bg-amber-50 hover:bg-amber-100 border border-amber-200/80 rounded-xl shadow-sm transition-all cursor-pointer whitespace-nowrap"
+                        title="產生本冊專屬連結，發給他人一起看圖與上傳"
+                      >
+                        <Users className="w-4 h-4 text-amber-700" />
+                        <span>👥 分享協作</span>
+                      </button>
 
-                {/* 上傳成績圖 */}
-                {!isViewOnly && (
-                  <button
-                    type="button"
-                    onClick={() => setIsUploadOpen(true)}
-                    className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-4 py-2.5 text-xs font-bold text-stone-700 bg-white hover:bg-stone-50 border border-stone-300 rounded-xl shadow-sm transition-all active:scale-95 cursor-pointer whitespace-nowrap"
-                  >
-                    <UploadCloud className="w-4 h-4 text-stone-600" />
-                    <span>上傳成績截圖</span>
-                  </button>
+                      {!isViewOnly && (
+                        <button
+                          type="button"
+                          onClick={() => setIsUploadOpen(true)}
+                          className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 text-xs font-bold text-stone-700 bg-white hover:bg-stone-50 border border-stone-300 rounded-xl shadow-sm transition-all cursor-pointer whitespace-nowrap"
+                        >
+                          <UploadCloud className="w-4 h-4 text-stone-600" />
+                          <span>＋ 上傳</span>
+                        </button>
+                      )}
+                    </div>
+                  </>
+                ) : (
+                  /* 0 人時：手機/電腦上直接展現直覺易懂的上傳按鈕，不顯示灰色的翻閱按鈕 */
+                  <div className="flex items-center gap-2 w-full sm:w-auto">
+                    <button
+                      type="button"
+                      onClick={() => setIsUploadOpen(true)}
+                      className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-5 py-2.5 text-xs font-bold text-white bg-stone-900 hover:bg-stone-800 rounded-xl shadow-sm transition-all active:scale-95 cursor-pointer whitespace-nowrap"
+                    >
+                      <UploadCloud className="w-4 h-4 text-amber-400" />
+                      <span>🚀 立即上傳考卷截圖</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShareModalBook(currentBook);
+                        setIsShareModalOpen(true);
+                      }}
+                      className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 text-xs font-bold text-amber-900 bg-amber-50 hover:bg-amber-100 border border-amber-200/80 rounded-xl shadow-sm transition-all cursor-pointer whitespace-nowrap"
+                    >
+                      <Users className="w-4 h-4 text-amber-700" />
+                      <span>分享本冊</span>
+                    </button>
+                  </div>
                 )}
               </div>
             </div>
@@ -358,6 +387,13 @@ export const App: React.FC = () => {
           }}
         />
       )}
+
+      {/* 雲端同步與權限開通指南彈窗 */}
+      <FirebaseGuideModal
+        currentBook={currentBook}
+        isOpen={isGuideOpen}
+        onClose={() => setIsGuideOpen(false)}
+      />
 
       {/* 上傳彈窗 */}
       {currentBook && (
