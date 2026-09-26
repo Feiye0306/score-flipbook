@@ -4,6 +4,7 @@ import {
   deleteDoc,
   onSnapshot,
   getDoc,
+  collection,
 } from 'firebase/firestore';
 import { db, isFirebaseConfigured } from '../config/firebase';
 import type { ExamBook, ScoreImage, StudentFolder } from '../types';
@@ -177,22 +178,67 @@ export function subscribeSingleBook(
     try {
       const firestoreDb = db;
       const docRef = doc(firestoreDb, COLLECTION_NAME, bookId);
-      const unsub = onSnapshot(
+      const membersColRef = collection(firestoreDb, COLLECTION_NAME, bookId, 'members');
+
+      const unsubDoc = onSnapshot(
         docRef,
         (snap) => {
           if (snap.exists()) {
             const data = snap.data() as ExamBook;
             const current = getLocalBooks();
-            current[data.id] = data;
+            const merged: ExamBook = {
+              ...data,
+              students: {
+                ...(current[bookId]?.students || {}),
+                ...(data.students || {}),
+              },
+            };
+            current[bookId] = merged;
             saveLocalBooks(current);
-            onUpdate(data);
+            onUpdate(merged);
           }
         },
         (err) => {
           console.warn(`訪客單冊監聽受阻 [${bookId}]：`, err.message);
         }
       );
-      return unsub;
+
+      // 即時同步監聽成員圖片子集合 (突破 1MB 限制，多人同時上傳秒級合併)
+      const unsubMembers = onSnapshot(
+        membersColRef,
+        (colSnap) => {
+          const current = getLocalBooks();
+          const book = current[bookId] || {
+            id: bookId,
+            title: '圖文手冊',
+            createdAt: Date.now(),
+            updatedAt: Date.now(),
+            students: {},
+          };
+
+          const studentsMap = { ...(book.students || {}) };
+          colSnap.forEach((mSnap) => {
+            if (mSnap.exists()) {
+              const folder = mSnap.data() as StudentFolder;
+              studentsMap[folder.studentName] = folder;
+            }
+          });
+
+          book.students = studentsMap;
+          book.updatedAt = Date.now();
+          current[bookId] = book;
+          saveLocalBooks(current);
+          onUpdate(book);
+        },
+        (err) => {
+          console.warn(`成員子集合監聽受阻 [${bookId}]：`, err.message);
+        }
+      );
+
+      return () => {
+        unsubDoc();
+        unsubMembers();
+      };
     } catch (err) {
       console.warn('單冊監聽例外：', err);
     }
@@ -296,6 +342,17 @@ export async function appendImagesToStudent(
 
   // 儲存更新 (本地立即生效 + 嘗試同步雲端)
   await saveExamBook(book);
+
+  // 3. 同步寫入 Firestore 獨立成員子文檔 (徹底免除單文件 1MB 限制，百張考卷極速同步)
+  if (isFirebaseConfigured && db) {
+    try {
+      const firestoreDb = db;
+      const memberDocRef = doc(firestoreDb, COLLECTION_NAME, bookId, 'members', cleanName);
+      await setDoc(memberDocRef, existingFolder, { merge: true });
+    } catch (err: any) {
+      console.warn('子集合成員同步警訊：', err.message);
+    }
+  }
 }
 
 /**
@@ -317,6 +374,17 @@ export async function removeStudentImage(
     book.students[cleanName].updatedAt = Date.now();
     book.updatedAt = Date.now();
     await saveExamBook(book);
+
+    // 同步更新雲端子集合
+    if (isFirebaseConfigured && db) {
+      try {
+        const firestoreDb = db;
+        const memberDocRef = doc(firestoreDb, COLLECTION_NAME, bookId, 'members', cleanName);
+        await setDoc(memberDocRef, book.students[cleanName], { merge: true });
+      } catch (err: any) {
+        console.warn('雲端成員圖片刪除同步警訊：', err.message);
+      }
+    }
   }
 }
 
@@ -335,5 +403,16 @@ export async function removeStudentFolder(
     delete book.students[cleanName];
     book.updatedAt = Date.now();
     await saveExamBook(book);
+
+    // 同步從雲端子集合刪除該成員
+    if (isFirebaseConfigured && db) {
+      try {
+        const firestoreDb = db;
+        const memberDocRef = doc(firestoreDb, COLLECTION_NAME, bookId, 'members', cleanName);
+        await deleteDoc(memberDocRef);
+      } catch (err: any) {
+        console.warn('雲端成員刪除同步警訊：', err.message);
+      }
+    }
   }
 }

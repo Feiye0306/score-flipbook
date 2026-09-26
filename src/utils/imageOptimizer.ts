@@ -84,15 +84,19 @@ export async function optimizeScoreImage(
           ctx.imageSmoothingQuality = 'high';
           ctx.drawImage(img, 0, 0, width, height);
 
+          const isWebpSupported = canvas.toDataURL('image/webp').indexOf('data:image/webp') === 0;
+          const mimeType = isWebpSupported ? 'image/webp' : 'image/jpeg';
+          const ext = isWebpSupported ? '.webp' : '.jpg';
+
           canvas.toBlob(
             (blob) => {
               if (!blob) {
                 resolve(fallbackResult);
                 return;
               }
-              const newFileName = file.name.replace(/\.[^/.]+$/, '') + '.jpg';
+              const newFileName = file.name.replace(/\.[^/.]+$/, '') + ext;
               const optimizedFile = new File([blob], newFileName, {
-                type: 'image/jpeg',
+                type: mimeType,
                 lastModified: Date.now(),
               });
 
@@ -105,7 +109,7 @@ export async function optimizeScoreImage(
                 optimizedSize: optimizedFile.size,
               });
             },
-            'image/jpeg',
+            mimeType,
             quality
           );
         } catch {
