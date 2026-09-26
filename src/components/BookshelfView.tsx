@@ -17,6 +17,129 @@ import {
 import type { ExamBook } from '../types';
 import { downloadBookImages, downloadPersonImages } from '../utils/zipExporter';
 
+export interface BookTheme {
+  id: string;
+  name: string;
+  bgGradient: string; // 封面主體漸層
+  spineGradient: string; // 書脊裝訂感漸層
+  borderStroke: string; // 精裝金屬燙印邊框
+  badgeClass: string; // 分類標籤樣式
+  iconColor: string; // 圖示顏色
+  accentText: string; // 標題懸停/強調文字色
+  bottomBorder: string; // 封面底部邊線
+}
+
+// 8 套精美經典藏書室高級色盤（沉穩、典雅、易於分辨）
+export const BOOK_THEMES: BookTheme[] = [
+  // 1. 經典藏青 (Midnight Navy & Champagne)
+  {
+    id: 'navy',
+    name: '藏青金裝',
+    bgGradient: 'from-[#0F1E36] via-[#162B4D] to-[#0A1526]',
+    spineGradient: 'from-[#08101D] via-[#1A3258] to-transparent',
+    borderStroke: 'border-sky-400/25',
+    badgeClass: 'bg-sky-950/80 border-sky-600/40 text-sky-200',
+    iconColor: 'text-sky-400',
+    accentText: 'group-hover:text-sky-300',
+    bottomBorder: 'border-sky-900/60',
+  },
+  // 2. 冷杉墨綠 (Imperial Forest & Gold)
+  {
+    id: 'forest',
+    name: '冷杉翠綠',
+    bgGradient: 'from-[#0D241C] via-[#16382C] to-[#081712]',
+    spineGradient: 'from-[#05100C] via-[#1B4234] to-transparent',
+    borderStroke: 'border-emerald-400/25',
+    badgeClass: 'bg-emerald-950/80 border-emerald-600/40 text-emerald-200',
+    iconColor: 'text-emerald-400',
+    accentText: 'group-hover:text-emerald-300',
+    bottomBorder: 'border-emerald-900/60',
+  },
+  // 3. 英倫酒紅 (Royal Burgundy & Brass)
+  {
+    id: 'burgundy',
+    name: '典雅酒紅',
+    bgGradient: 'from-[#2D1217] via-[#421A22] to-[#1C0B0E]',
+    spineGradient: 'from-[#140608] via-[#4D1E27] to-transparent',
+    borderStroke: 'border-rose-400/25',
+    badgeClass: 'bg-rose-950/80 border-rose-600/40 text-rose-200',
+    iconColor: 'text-rose-400',
+    accentText: 'group-hover:text-rose-300',
+    bottomBorder: 'border-rose-900/60',
+  },
+  // 4. 焦糖暖褐 (Caramel Saddle & Ochre)
+  {
+    id: 'saddle',
+    name: '焦糖皮質',
+    bgGradient: 'from-[#2F1D12] via-[#442A1A] to-[#1D120B]',
+    spineGradient: 'from-[#130B07] via-[#4F311F] to-transparent',
+    borderStroke: 'border-amber-400/30',
+    badgeClass: 'bg-amber-950/80 border-amber-600/40 text-amber-200',
+    iconColor: 'text-amber-400',
+    accentText: 'group-hover:text-amber-300',
+    bottomBorder: 'border-amber-900/60',
+  },
+  // 5. 曜石夜黑 (Onyx & Champagne Gold)
+  {
+    id: 'onyx',
+    name: '曜石夜黑',
+    bgGradient: 'from-[#18191D] via-[#23252B] to-[#101114]',
+    spineGradient: 'from-[#0A0A0C] via-[#2A2C34] to-transparent',
+    borderStroke: 'border-amber-500/20',
+    badgeClass: 'bg-stone-800/80 border-stone-600/50 text-amber-300',
+    iconColor: 'text-amber-400',
+    accentText: 'group-hover:text-amber-300',
+    bottomBorder: 'border-stone-800',
+  },
+  // 6. 紫檀幽蘭 (Plum Violet & Amethyst)
+  {
+    id: 'plum',
+    name: '紫檀幽蘭',
+    bgGradient: 'from-[#25172E] via-[#372344] to-[#170E1D]',
+    spineGradient: 'from-[#0E0812] via-[#422A52] to-transparent',
+    borderStroke: 'border-purple-400/25',
+    badgeClass: 'bg-purple-950/80 border-purple-600/40 text-purple-200',
+    iconColor: 'text-purple-400',
+    accentText: 'group-hover:text-purple-300',
+    bottomBorder: 'border-purple-900/60',
+  },
+  // 7. 藍灰石青 (Slate Petrol & Steel)
+  {
+    id: 'petrol',
+    name: '藍灰石青',
+    bgGradient: 'from-[#142329] via-[#1E333B] to-[#0D161A]',
+    spineGradient: 'from-[#080E10] via-[#243E47] to-transparent',
+    borderStroke: 'border-teal-400/25',
+    badgeClass: 'bg-teal-950/80 border-teal-600/40 text-teal-200',
+    iconColor: 'text-teal-400',
+    accentText: 'group-hover:text-teal-300',
+    bottomBorder: 'border-teal-900/60',
+  },
+  // 8. 摩卡陶土 (Mocha Terracotta)
+  {
+    id: 'mocha',
+    name: '摩卡陶土',
+    bgGradient: 'from-[#2B1E19] via-[#3D2B24] to-[#1A120E]',
+    spineGradient: 'from-[#100A08] via-[#4A342B] to-transparent',
+    borderStroke: 'border-orange-400/25',
+    badgeClass: 'bg-orange-950/80 border-orange-600/40 text-orange-200',
+    iconColor: 'text-orange-400',
+    accentText: 'group-hover:text-orange-300',
+    bottomBorder: 'border-orange-900/60',
+  },
+];
+
+export function getBookTheme(bookId: string, title: string): BookTheme {
+  const str = bookId + title;
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = (hash << 5) - hash + str.charCodeAt(i);
+    hash |= 0;
+  }
+  const index = Math.abs(hash) % BOOK_THEMES.length;
+  return BOOK_THEMES[index];
+}
+
 interface BookshelfViewProps {
   books: ExamBook[];
   currentBookId: string;
@@ -83,8 +206,31 @@ export const BookshelfView: React.FC<BookshelfViewProps> = ({
         )}
       </div>
 
-      {/* 冊子排列網格 (Bookshelf Grid) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6 sm:gap-7">
+      {/* 冊子排列網格 (Bookshelf Grid) 或 典雅空狀態 */}
+      {books.length === 0 ? (
+        <div className="text-center py-16 px-4 bg-white rounded-3xl border border-stone-200/90 shadow-xs max-w-lg mx-auto animate-in fade-in duration-150">
+          <div className="w-16 h-16 rounded-2xl bg-amber-50 border border-amber-200/80 text-amber-700 flex items-center justify-center mx-auto mb-4 shadow-xs">
+            <BookOpen className="w-8 h-8 text-amber-600" />
+          </div>
+          <h3 className="text-lg font-bold text-stone-900 font-serif mb-1">
+            書架目前尚無圖文冊
+          </h3>
+          <p className="text-xs text-stone-500 mb-6 leading-relaxed max-w-xs mx-auto">
+            您可以立即建立一本專屬的圖冊或相簿資料夾，開始上傳並體驗流暢的翻頁閱讀！
+          </p>
+          {!isViewOnly && (
+            <button
+              type="button"
+              onClick={onCreateBookClick}
+              className="inline-flex items-center gap-2 px-5 py-2.5 text-xs font-bold text-white bg-stone-900 hover:bg-stone-800 rounded-xl shadow-sm transition-all active:scale-95 cursor-pointer"
+            >
+              <Plus className="w-4 h-4 text-amber-400" />
+              <span>＋ 立即建立第一本圖文冊</span>
+            </button>
+          )}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6 sm:gap-7">
         {books.map((book) => {
           const studentKeys = Object.keys(book.students || {}).sort((a, b) => 
             a.localeCompare(b, 'zh-Hant')
@@ -106,6 +252,7 @@ export const BookshelfView: React.FC<BookshelfViewProps> = ({
           }
 
           const isCurrent = book.id === currentBookId;
+          const theme = getBookTheme(book.id, book.title);
 
           return (
             <div
@@ -116,34 +263,34 @@ export const BookshelfView: React.FC<BookshelfViewProps> = ({
                   : 'border-stone-200/90 hover:border-stone-400/80'
               }`}
             >
-              {/* 冊子封面 (典雅文件夾精裝質感，移除雜亂隨機碼與重複文字) */}
+              {/* 冊子封面 (典雅藏書皮革質感，專屬多彩莫蘭迪配色) */}
               <div 
                 onClick={() => onOpenViewerForBook(book)}
-                className="relative p-6 sm:p-7 bg-gradient-to-br from-stone-900 via-stone-850 to-stone-950 text-stone-100 cursor-pointer overflow-hidden select-none"
+                className={`relative p-6 sm:p-7 bg-gradient-to-br ${theme.bgGradient} text-stone-100 cursor-pointer overflow-hidden select-none transition-transform active:scale-[0.99]`}
                 title="點擊直接打開並開始翻閱這本冊子"
               >
-                {/* 書脊裝訂感 */}
-                <div className="absolute left-0 top-0 bottom-0 w-3 bg-gradient-to-r from-stone-950 via-stone-800 to-transparent border-r border-amber-500/20" />
+                {/* 書脊裝訂感 (立體微光影) */}
+                <div className={`absolute left-0 top-0 bottom-0 w-3 bg-gradient-to-r ${theme.spineGradient} border-r ${theme.borderStroke}`} />
                 
-                {/* 精裝邊框 */}
-                <div className="absolute inset-2 border border-amber-500/15 rounded-xl pointer-events-none" />
+                {/* 燙印邊框 */}
+                <div className={`absolute inset-2 border ${theme.borderStroke} rounded-xl pointer-events-none`} />
 
                 {/* 封面內容排版 */}
                 <div className="relative z-10 flex flex-col h-36 justify-between pl-2">
-                  {/* 頂部：優雅分類圖標 + 迷你紙張疊放暗示 */}
+                  {/* 頂部：優雅分類徽記 + 書色標記 */}
                   <div className="flex items-center justify-between">
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-stone-800/80 border border-stone-700/80 text-amber-300 text-[11px] font-medium tracking-wide">
-                      <FolderOpen className="w-3.5 h-3.5 text-amber-400" />
-                      <span>精選圖冊</span>
+                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md border text-[11px] font-medium tracking-wide ${theme.badgeClass}`}>
+                      <FolderOpen className={`w-3.5 h-3.5 ${theme.iconColor}`} />
+                      <span>{theme.name}</span>
                     </span>
 
                     {/* 迷你若隱若現的微縮卡 */}
                     {sampleThumbnail && (
-                      <div className="w-9 h-11 rounded bg-stone-800 border border-stone-600 overflow-hidden shadow-md transform rotate-6 opacity-60 group-hover:opacity-90 transition-all">
+                      <div className="w-9 h-11 rounded bg-black/40 border border-white/20 overflow-hidden shadow-md transform rotate-6 opacity-75 group-hover:opacity-100 transition-all">
                         <img 
                           src={sampleThumbnail} 
                           alt="preview" 
-                          className="w-full h-full object-cover filter contrast-75 brightness-90" 
+                          className="w-full h-full object-cover filter contrast-90 brightness-95" 
                         />
                       </div>
                     )}
@@ -151,15 +298,15 @@ export const BookshelfView: React.FC<BookshelfViewProps> = ({
 
                   {/* 冊子主標題 */}
                   <div className="my-auto py-1">
-                    <h3 className="font-serif font-bold text-lg sm:text-xl text-stone-100 group-hover:text-amber-300 transition-colors line-clamp-2 leading-snug">
+                    <h3 className={`font-serif font-bold text-lg sm:text-xl text-stone-100 ${theme.accentText} transition-colors line-clamp-2 leading-snug tracking-tight drop-shadow-xs`}>
                       {book.title}
                     </h3>
                   </div>
 
                   {/* 底部數據：依指示簡化為「名單 X 人 · 共 Y 張圖」 */}
-                  <div className="flex items-center justify-between text-xs text-stone-300 pt-2 border-t border-stone-800">
+                  <div className={`flex items-center justify-between text-xs text-stone-300 pt-2 border-t ${theme.bottomBorder}`}>
                     <div className="flex items-center gap-1.5 font-medium">
-                      <Users className="w-3.5 h-3.5 text-amber-400" />
+                      <Users className={`w-3.5 h-3.5 ${theme.iconColor}`} />
                       <span>名單 {studentCount} 人 · 共 {totalPages} 張圖</span>
                     </div>
                   </div>
@@ -269,6 +416,7 @@ export const BookshelfView: React.FC<BookshelfViewProps> = ({
           </div>
         )}
       </div>
+      )}
 
       {/* 快速確認名單彈窗 (免整頁跳轉，支援分人打包與全冊打包) */}
       {quickListBook && (

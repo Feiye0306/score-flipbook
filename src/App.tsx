@@ -11,7 +11,7 @@ import {
 import { verifyAccessToken } from './services/tokenService';
 import type { ExamBook } from './types';
 import { Navbar } from './components/Navbar';
-import { BookshelfView } from './components/BookshelfView';
+import { BookshelfView, getBookTheme } from './components/BookshelfView';
 import { StudentCardList } from './components/StudentCardList';
 import { UploadModal } from './components/UploadModal';
 import { FlipViewerModal } from './components/FlipViewerModal';
@@ -97,8 +97,20 @@ export const App: React.FC = () => {
     }
 
     const unsubscribe = subscribeBooks((loadedBooks) => {
+      // 1. 自動檢測並清理歷史殘留的「第一次段考」幽靈空冊子
+      const validBooks = loadedBooks.filter((b) => {
+        const isGhost =
+          (b.title.includes('第一次段考') || b.title.includes('數學科') || b.title.includes('專案第一輯')) &&
+          Object.keys(b.students || {}).length === 0;
+        if (isGhost) {
+          deleteExamBook(b.id);
+          return false;
+        }
+        return true;
+      });
+
       // 確保每本冊子都有 shareCode
-      const normalizedBooks = loadedBooks.map((b) => ({
+      const normalizedBooks = validBooks.map((b) => ({
         ...b,
         shareCode: b.shareCode || b.id,
       }));
@@ -112,36 +124,13 @@ export const App: React.FC = () => {
           );
           if (matched) {
             setCurrentBookId(matched.id);
-          } else {
-            // 訪客透過隨機新連結進入，為其建立此專屬冊子
-            const sharedNewBook: ExamBook = {
-              id: 'exam_' + Date.now(),
-              title: '分享的圖文翻閱冊',
-              shareCode: shareParam,
-              createdAt: Date.now(),
-              updatedAt: Date.now(),
-              students: {},
-            };
-            saveExamBook(sharedNewBook);
-            setBooks((prev) => [sharedNewBook, ...prev]);
-            setCurrentBookId(sharedNewBook.id);
           }
         } else {
-          setCurrentBookId((prev) => (prev ? prev : normalizedBooks[0].id));
+          setCurrentBookId((prev) => (prev && normalizedBooks.some((b) => b.id === prev) ? prev : normalizedBooks[0].id));
         }
       } else {
-        // 初次若無任何冊子，自動建立預設第一本
-        const defaultBook: ExamBook = {
-          id: 'exam_' + Date.now(),
-          title: '圖文手冊 - 專案第一輯',
-          shareCode: 'bk_' + Math.random().toString(36).substring(2, 8),
-          createdAt: Date.now(),
-          updatedAt: Date.now(),
-          students: {},
-        };
-        saveExamBook(defaultBook);
-        setBooks([defaultBook]);
-        setCurrentBookId(defaultBook.id);
+        // 沒有冊子時保持乾淨空狀態，絕不擅自建立任何假冊子
+        setCurrentBookId('');
       }
     });
 
@@ -316,12 +305,7 @@ export const App: React.FC = () => {
 
       {/* 主要內容區 */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-7">
-        {books.length === 0 ? (
-          <div className="text-center py-20">
-            <BookOpen className="w-12 h-12 text-stone-300 mx-auto mb-3" />
-            <p className="text-sm text-stone-500">正在載入測驗冊子...</p>
-          </div>
-        ) : activeTab === 'shelf' ? (
+        {activeTab === 'shelf' ? (
           /* 【書架視圖模式】：冊子排列陳列，點擊直接開卷看圖與翻頁 */
           <BookshelfView
             books={books}
@@ -360,8 +344,8 @@ export const App: React.FC = () => {
                     <span>返回冊子書架</span>
                   </button>
                   <span className="text-stone-300">·</span>
-                  <span className="text-[10px] sm:text-[11px] font-bold text-amber-800 bg-amber-50 border border-amber-200/70 px-2 py-0.5 rounded">
-                    圖文冊
+                  <span className={`text-[10px] sm:text-[11px] font-bold px-2 py-0.5 rounded border ${getBookTheme(currentBook.id, currentBook.title).badgeClass}`}>
+                    圖文冊 · {getBookTheme(currentBook.id, currentBook.title).name}
                   </span>
                 </div>
 
