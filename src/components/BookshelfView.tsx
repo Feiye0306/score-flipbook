@@ -191,7 +191,7 @@ export const BookshelfView: React.FC<BookshelfViewProps> = ({
           <button
             type="button"
             onClick={onCreateBookClick}
-            className="inline-flex items-center gap-2 px-5 py-2.5 text-xs sm:text-sm font-bold text-white bg-[#8A5638] hover:bg-[#73452B] rounded-full shadow-sm transition-all active:scale-95 cursor-pointer whitespace-nowrap self-start sm:self-auto"
+            className="inline-flex items-center gap-2 px-5 py-2.5 text-xs sm:text-sm font-bold text-white bg-[#6E3E26] hover:bg-[#59301B] rounded-full shadow-sm transition-all active:scale-95 cursor-pointer whitespace-nowrap self-start sm:self-auto"
           >
             <Plus className="w-4 h-4" />
             <span>建立新圖冊</span>
@@ -205,15 +205,15 @@ export const BookshelfView: React.FC<BookshelfViewProps> = ({
           <div className="w-16 h-16 rounded-2xl bg-white flex items-center justify-center mx-auto mb-4 border border-[#D6E1EA]">
             <BookOpen className="w-8 h-8 text-[#16202A]" />
           </div>
-          <h3 className="text-lg font-bold text-[#16202A] font-serif mb-2">尚無任何圖文冊</h3>
-          <p className="text-sm text-[#8A5638] mb-6 max-w-xs mx-auto leading-relaxed">
+          <h3 className="text-lg font-bold text-[#16202A] font-rounded mb-2">尚無任何圖文冊</h3>
+          <p className="text-sm text-[#6E3E26] mb-6 max-w-xs mx-auto leading-relaxed">
             建立第一本圖文冊，開始上傳並體驗流暢的翻頁閱讀！
           </p>
           {!isViewOnly && (
             <button
               type="button"
               onClick={onCreateBookClick}
-              className="inline-flex items-center gap-2 px-6 py-3 text-xs sm:text-sm font-bold text-white bg-[#8A5638] hover:bg-[#73452B] rounded-full transition-all active:scale-95 cursor-pointer shadow-sm"
+              className="inline-flex items-center gap-2 px-6 py-3 text-xs sm:text-sm font-bold text-white bg-[#6E3E26] hover:bg-[#59301B] rounded-full transition-all active:scale-95 cursor-pointer shadow-sm"
             >
               <Plus className="w-4 h-4" />
               <span>立即建立</span>
@@ -270,8 +270,8 @@ export const BookshelfView: React.FC<BookshelfViewProps> = ({
 
                   {/* 標題資訊：書名置頂，大氣排版 */}
                   <div className="flex-1 min-w-0 pt-0.5">
-                    {/* 書名：現代人文幾何黑體，無襯線大氣有力 */}
-                    <h3 className="font-sans font-black text-[#16202A] text-lg sm:text-xl leading-snug line-clamp-2 tracking-tight group-hover:text-[#8A5638] transition-colors mb-2.5">
+                    {/* 書名：POP 圓體，大氣有力 */}
+                    <h3 className="font-rounded font-black text-[#16202A] text-lg sm:text-xl leading-snug line-clamp-2 tracking-tight group-hover:text-[#6E3E26] transition-colors mb-2.5">
                       {book.title}
                     </h3>
 
@@ -334,7 +334,7 @@ export const BookshelfView: React.FC<BookshelfViewProps> = ({
                       <span>分享</span>
                     </button>
 
-                    {/* 下載 (小一號：w-9 h-9，icon w-3.5 h-3.5) */}
+                    {/* 下載 (中間大小：w-9 h-9，icon w-4 h-4) */}
                     <button
                       type="button"
                       onClick={(e) => {
@@ -345,10 +345,10 @@ export const BookshelfView: React.FC<BookshelfViewProps> = ({
                       className="inline-flex items-center justify-center w-9 h-9 text-[#16202A] bg-white hover:bg-stone-50 border border-[#D6E1EA] hover:border-[#16202A] rounded-full transition-all cursor-pointer disabled:opacity-30 shadow-2xs flex-shrink-0"
                       title="打包下載全冊圖片"
                     >
-                      <Download className="w-3.5 h-3.5 text-[#16202A]" />
+                      <Download className="w-4 h-4 text-[#16202A]" />
                     </button>
 
-                    {/* 刪除 (小一號：w-9 h-9，icon w-3.5 h-3.5) */}
+                    {/* 刪除 (中間大小：w-9 h-9，icon w-4 h-4) */}
                     {books.length > 1 && !isViewOnly && (
                       <button
                         type="button"
@@ -360,7 +360,7 @@ export const BookshelfView: React.FC<BookshelfViewProps> = ({
                         className="inline-flex items-center justify-center w-9 h-9 text-stone-400 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors cursor-pointer border border-[#D6E1EA] flex-shrink-0"
                         title="刪除此冊"
                       >
-                        <Trash2 className="w-3.5 h-3.5" />
+                        <Trash2 className="w-4 h-4" />
                       </button>
                     )}
                   </div>
@@ -369,19 +369,19 @@ export const BookshelfView: React.FC<BookshelfViewProps> = ({
             );
           })}
 
-          {/* 建立新圖冊卡片 */}
+          {/* 建立新圖冊卡片：全海軍深藍、字體大一號、絕不換列 */}
           {!isViewOnly && (
             <div
               onClick={onCreateBookClick}
-              className="group min-h-[220px] rounded-3xl border-2 border-dashed border-[#D6E1EA] hover:border-[#8A5638] bg-[#F1F5F9]/80 hover:bg-[#F1F5F9] transition-all duration-300 flex flex-col items-center justify-center p-6 text-center cursor-pointer shadow-2xs"
+              className="group min-h-[220px] rounded-3xl border-2 border-dashed border-[#D6E1EA] hover:border-[#16202A] bg-[#F1F5F9]/80 hover:bg-[#F1F5F9] transition-all duration-300 flex flex-col items-center justify-center p-6 text-center cursor-pointer shadow-2xs"
             >
-              <div className="w-12 h-12 rounded-full bg-white border border-[#D6E1EA] group-hover:border-[#8A5638] group-hover:scale-105 flex items-center justify-center text-[#8A5638] shadow-2xs transition-all duration-200 mb-3">
-                <Plus className="w-6 h-6 text-[#8A5638]" />
+              <div className="w-12 h-12 rounded-full bg-white border border-[#D6E1EA] group-hover:border-[#16202A] group-hover:scale-105 flex items-center justify-center text-[#16202A] shadow-2xs transition-all duration-200 mb-3">
+                <Plus className="w-6 h-6 text-[#16202A]" />
               </div>
-              <h4 className="font-bold text-[#16202A] text-sm mb-1 font-sans">
+              <h4 className="font-rounded font-bold text-[#16202A] text-base sm:text-lg mb-1.5">
                 建立新圖文冊
               </h4>
-              <p className="text-xs text-[#8A5638] max-w-[180px] leading-relaxed font-sans">
+              <p className="text-sm font-medium text-[#16202A] whitespace-nowrap px-4 leading-relaxed font-sans">
                 新增另一本考卷相冊，獨立管理分類
               </p>
             </div>
@@ -508,7 +508,7 @@ export const BookshelfView: React.FC<BookshelfViewProps> = ({
           className="fixed bottom-5 right-5 z-50 bg-[#16202A] text-white px-4 py-2.5 rounded-2xl shadow-xl flex items-center gap-2.5 text-xs sm:text-sm border border-white/10 animate-in slide-in-from-bottom duration-200 cursor-pointer hover:bg-[#202E3D] transition-colors"
           title="點擊關閉提示"
         >
-          <FileDown className="w-4 h-4 text-[#8A5638] animate-pulse" />
+          <FileDown className="w-4 h-4 text-[#E5C07B] animate-pulse" />
           <span>{downloadProgress}</span>
           <span className="text-[10px] text-white/50 ml-1">✕</span>
         </div>

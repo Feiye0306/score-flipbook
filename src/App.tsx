@@ -342,7 +342,7 @@ export const App: React.FC = () => {
                     <span>返回冊子書架</span>
                   </button>
                   <span className="text-stone-300">/</span>
-                  <span className="text-xs font-bold px-2.5 py-0.5 rounded-full text-white bg-[#8A5638] shadow-2xs">
+                  <span className="text-xs font-bold px-2.5 py-0.5 rounded-full text-white bg-[#6E3E26] shadow-2xs">
                     圖文冊
                   </span>
                 </div>
@@ -452,7 +452,7 @@ export const App: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => setIsUploadOpen(true)}
-                      className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-5 py-2.5 text-xs sm:text-sm font-bold text-white bg-[#8A5638] hover:bg-[#73452B] rounded-full shadow-sm transition-all active:scale-95 cursor-pointer whitespace-nowrap"
+                      className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-5 py-2.5 text-xs sm:text-sm font-bold text-white bg-[#6E3E26] hover:bg-[#59301B] rounded-full shadow-sm transition-all active:scale-95 cursor-pointer whitespace-nowrap"
                     >
                       <UploadCloud className="w-4 h-4 text-white" />
                       <span>＋ 立即上傳圖片</span>

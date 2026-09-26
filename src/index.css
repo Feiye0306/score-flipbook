@@ -2,8 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@600;700;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
-
 @layer base {
   body {
     @apply antialiased text-[#16202A] min-h-screen selection:bg-[#16202A] selection:text-white;
@@ -13,6 +11,10 @@
 
   .font-serif {
     font-family: "Noto Serif TC", Georgia, serif;
+  }
+
+  .font-rounded {
+    font-family: "Zen Maru Gothic", "M PLUS Rounded 1c", "Hiragino Maru Gothic ProN", "Yu Gothic", sans-serif;
   }
 }
 

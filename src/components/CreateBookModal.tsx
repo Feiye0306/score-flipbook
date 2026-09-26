@@ -39,7 +39,7 @@ export const CreateBookModal: React.FC<CreateBookModalProps> = ({
         {/* 頂部標題 */}
         <div className="flex items-center justify-between pb-3 border-b border-[#D6E1EA]">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-full bg-[#8A5638]/10 text-[#8A5638] flex items-center justify-center border border-[#8A5638]/20">
+            <div className="w-9 h-9 rounded-full bg-[#6E3E26]/10 text-[#6E3E26] flex items-center justify-center border border-[#6E3E26]/20">
               <BookOpen className="w-4 h-4" />
             </div>
             <h3 className="text-lg font-bold text-[#16202A] font-sans">
@@ -72,7 +72,7 @@ export const CreateBookModal: React.FC<CreateBookModalProps> = ({
               placeholder="請輸入冊子名稱..."
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full px-4 py-2.5 text-sm bg-[#F1F5F9] border border-[#D6E1EA] focus:border-[#8A5638] rounded-xl outline-none font-sans text-[#16202A] transition-colors"
+              className="w-full px-4 py-2.5 text-sm bg-[#F1F5F9] border border-[#D6E1EA] focus:border-[#6E3E26] rounded-xl outline-none font-sans text-[#16202A] transition-colors"
             />
           </div>
 
@@ -87,7 +87,7 @@ export const CreateBookModal: React.FC<CreateBookModalProps> = ({
             <button
               type="submit"
               disabled={!title.trim()}
-              className="inline-flex items-center gap-1.5 px-5 py-2 text-xs sm:text-sm font-bold text-white bg-[#8A5638] hover:bg-[#73452B] disabled:opacity-40 rounded-full shadow-sm transition-all cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-5 py-2 text-xs sm:text-sm font-bold text-white bg-[#6E3E26] hover:bg-[#59301B] disabled:opacity-40 rounded-full shadow-sm transition-all cursor-pointer"
             >
               <Plus className="w-4 h-4" />
               <span>確認建立</span>

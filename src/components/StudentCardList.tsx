@@ -106,7 +106,7 @@ export const StudentCardList: React.FC<StudentCardListProps> = ({
       <div className="flex items-center justify-between text-xs sm:text-sm text-[#16202A]/70 px-1 font-medium">
         <div className="flex items-center gap-2">
           <span className="font-bold text-[#16202A]">成員名冊列表</span>
-          <span className="px-2.5 py-0.5 bg-[#8A5638]/10 text-[#8A5638] border border-[#8A5638]/20 rounded-full font-bold text-xs">
+          <span className="px-2.5 py-0.5 bg-[#6E3E26]/10 text-[#6E3E26] border border-[#6E3E26]/20 rounded-full font-bold text-xs">
             共 {filteredStudents.length} 人
           </span>
         </div>

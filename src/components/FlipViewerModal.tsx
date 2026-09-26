@@ -48,6 +48,9 @@ export const FlipViewerModal: React.FC<FlipViewerModalProps> = ({
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [copiedType, setCopiedType] = useState<'collab' | 'student' | null>(null);
 
+  // 看圖容器 Ref (用於綁定 passive: false 的 wheel 事件)
+  const imageContainerRef = useRef<HTMLDivElement>(null);
+
   // 手機滑動紀錄
   const touchStartX = useRef<number>(0);
   const touchEndX = useRef<number>(0);
@@ -65,12 +68,36 @@ export const FlipViewerModal: React.FC<FlipViewerModalProps> = ({
   const prevStudentName = currentStudentIndex > 0 ? studentNames[currentStudentIndex - 1] : null;
   const nextStudentName = currentStudentIndex < studentNames.length - 1 ? studentNames[currentStudentIndex + 1] : null;
 
-  // 重置位置
+  // 重置位置與縮放
   const resetTransform = () => {
     setScale(1);
     setRotation(0);
     setPosition({ x: 0, y: 0 });
+    setIsDragging(false);
   };
+
+  // 滾輪縮放監聽 (阻止外層默認滾動，支援 1x ~ 6x 平滑縮放)
+  useEffect(() => {
+    const container = imageContainerRef.current;
+    if (!container || !isOpen) return;
+
+    const handleWheelNative = (e: WheelEvent) => {
+      e.preventDefault();
+      const zoomFactor = e.deltaY < 0 ? 1.15 : 0.88;
+      setScale((prevScale) => {
+        const nextScale = Math.min(Math.max(Number((prevScale * zoomFactor).toFixed(2)), 1), 6);
+        if (nextScale <= 1) {
+          setPosition({ x: 0, y: 0 });
+        }
+        return nextScale;
+      });
+    };
+
+    container.addEventListener('wheel', handleWheelNative, { passive: false });
+    return () => {
+      container.removeEventListener('wheel', handleWheelNative);
+    };
+  }, [isOpen]);
 
   useEffect(() => {
     if (isOpen) {
@@ -255,17 +282,17 @@ export const FlipViewerModal: React.FC<FlipViewerModalProps> = ({
             </button>
           )}
 
-          {/* 當前學生姓名膠囊 */}
-          <div className="flex items-center gap-1.5 bg-white/5 border border-[#D4AF37]/35 px-3 py-1 rounded-full text-xs font-bold text-[#F3D17A] shadow-2xs truncate">
-            <User className="w-3.5 h-3.5 text-[#E5C07B] flex-shrink-0" />
-            <span className="truncate max-w-[90px] sm:max-w-none">{currentStudentName}</span>
-            <span className="text-[10px] text-stone-400 font-mono hidden sm:inline">
+          {/* 當前學生姓名膠囊：圓體大一號 */}
+          <div className="flex items-center gap-1.5 bg-white/5 border border-[#D4AF37]/35 px-3.5 py-1 rounded-full font-rounded font-bold text-sm sm:text-base text-[#F3D17A] shadow-2xs truncate">
+            <User className="w-4 h-4 text-[#E5C07B] flex-shrink-0" />
+            <span className="truncate max-w-[100px] sm:max-w-none">{currentStudentName}</span>
+            <span className="text-xs text-stone-400 font-mono hidden sm:inline ml-0.5">
               ({currentStudentIndex + 1}/{studentNames.length})
             </span>
           </div>
 
-          {/* 頁碼指示膠囊 */}
-          <span className="text-xs text-[#E5C07B]/90 font-medium bg-white/5 px-2.5 py-0.5 rounded-full flex-shrink-0 border border-[#D4AF37]/20">
+          {/* 頁碼指示膠囊：圓體大一號 */}
+          <span className="font-rounded font-bold text-sm sm:text-base text-[#E5C07B] bg-white/5 px-3 py-1 rounded-full flex-shrink-0 border border-[#D4AF37]/25">
             {currentPageIndex + 1} / {images.length} 頁
           </span>
         </div>
@@ -355,13 +382,13 @@ export const FlipViewerModal: React.FC<FlipViewerModalProps> = ({
                   placeholder="搜尋姓名..."
                   value={directorySearch}
                   onChange={(e) => setDirectorySearch(e.target.value)}
-                  className="w-full pl-8 pr-2.5 py-1.5 text-xs bg-white/5 border border-white/10 rounded-full text-stone-100 placeholder-stone-500 outline-none focus:border-white/40"
+                  className="w-full pl-8 pr-2.5 py-1.5 text-xs bg-white/5 border border-white/10 rounded-full text-stone-100 placeholder-stone-500 outline-none focus:border-white/40 font-sans"
                 />
               </div>
             </div>
 
-            {/* 學生名單捲軸 */}
-            <div className="flex-1 overflow-y-auto p-2 space-y-1">
+            {/* 學生名單捲軸：圓體大一號、金色字、選中為金底藍字 */}
+            <div className="flex-1 overflow-y-auto p-2 space-y-1.5">
               {filteredDirectory.map((name, idx) => {
                 const sFolder = currentBook.students?.[name];
                 const pageCount = sFolder?.images?.length || 0;
@@ -376,20 +403,20 @@ export const FlipViewerModal: React.FC<FlipViewerModalProps> = ({
                       setCurrentStudentName(name);
                       setCurrentPageIndex(0);
                     }}
-                    className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs transition-all text-left cursor-pointer ${
+                    className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-rounded text-sm sm:text-base transition-all text-left cursor-pointer ${
                       isSelected
-                        ? 'bg-white text-[#111111] font-bold shadow-sm'
-                        : 'text-stone-300 hover:bg-white/5 hover:text-white'
+                        ? 'bg-gradient-to-r from-[#F3D17A] to-[#D4AF37] text-[#070B12] font-black shadow-md'
+                        : 'text-[#E5C07B] hover:bg-white/5 hover:text-[#F3D17A]'
                     }`}
                   >
-                    <div className="flex items-center gap-2 truncate">
-                      <span className={`w-5 text-[11px] font-mono ${isSelected ? 'text-stone-800' : 'text-stone-500'}`}>
+                    <div className="flex items-center gap-2.5 truncate">
+                      <span className={`w-5 text-xs font-mono font-bold ${isSelected ? 'text-[#070B12]/80' : 'text-[#D4AF37]/60'}`}>
                         {idx + 1}.
                       </span>
                       <span className="truncate">{name}</span>
                     </div>
-                    <span className={`text-[10px] px-2 py-0.5 rounded-full ${
-                      isSelected ? 'bg-stone-200 text-stone-900 font-bold' : 'bg-white/10 text-stone-400'
+                    <span className={`text-xs px-2.5 py-0.5 rounded-full font-bold ${
+                      isSelected ? 'bg-[#070B12]/15 text-[#070B12]' : 'bg-white/5 text-[#E5C07B]/80 border border-[#D4AF37]/20'
                     }`}>
                       {pageCount} 頁
                     </span>
@@ -400,11 +427,14 @@ export const FlipViewerModal: React.FC<FlipViewerModalProps> = ({
           </div>
         )}
 
-        {/* 滿版看圖區 */}
+        {/* 滿版看圖區 (支援滾輪平滑縮放與拖曳移動) */}
         <div 
-          className="flex-1 relative flex items-center justify-center overflow-hidden p-2 sm:p-4"
+          ref={imageContainerRef}
+          className="flex-1 relative flex items-center justify-center overflow-hidden p-2 sm:p-4 touch-none"
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
+          onMouseLeave={handleMouseUp}
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
@@ -424,7 +454,7 @@ export const FlipViewerModal: React.FC<FlipViewerModalProps> = ({
           {/* 考卷圖片主體 */}
           {currentImage ? (
             <div
-              className="transition-transform duration-100 ease-out max-w-full max-h-full flex items-center justify-center"
+              className="transition-transform duration-75 ease-out max-w-full max-h-full flex items-center justify-center select-none"
               style={{
                 transform: `translate(${position.x}px, ${position.y}px) scale(${scale}) rotate(${rotation}deg)`,
               }}
@@ -432,10 +462,10 @@ export const FlipViewerModal: React.FC<FlipViewerModalProps> = ({
               <img
                 src={currentImage.url}
                 alt={`${currentStudentName} 成績考卷截圖`}
-                className="max-h-[calc(100vh-140px)] max-w-[calc(100vw-16px)] sm:max-w-[calc(100vw-80px)] object-contain shadow-2xl rounded-lg pointer-events-none filter drop-shadow-md"
+                className="max-h-[calc(100vh-140px)] max-w-[calc(100vw-16px)] sm:max-w-[calc(100vw-80px)] object-contain shadow-2xl rounded-lg pointer-events-none filter drop-shadow-md select-none"
                 onDoubleClick={() => {
                   if (scale === 1) {
-                    setScale(2.2);
+                    setScale(2.5);
                   } else {
                     resetTransform();
                   }
@@ -485,15 +515,15 @@ export const FlipViewerModal: React.FC<FlipViewerModalProps> = ({
 
         {/* 底部導覽：切換學生專屬按鈕列 */}
         <div className="flex items-center justify-between gap-2 max-w-2xl mx-auto w-full">
-          {/* 上一位學生 */}
+          {/* 上一位學生：稍粗圓體、字號大一號 */}
           {!isPrivateMode && (
             <button
               type="button"
               disabled={!prevStudentName}
               onClick={goToPrevStudent}
-              className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-bold text-[#E5C07B] bg-[#151F32] hover:bg-[#1C2942] disabled:opacity-30 disabled:pointer-events-none rounded-xl border border-[#D4AF37]/35 shadow-sm active:scale-95 transition-all truncate cursor-pointer"
+              className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 font-rounded font-bold text-sm sm:text-base text-[#E5C07B] bg-[#151F32] hover:bg-[#1C2942] disabled:opacity-30 disabled:pointer-events-none rounded-xl border border-[#D4AF37]/35 shadow-sm active:scale-95 transition-all truncate cursor-pointer"
             >
-              <ChevronLeft className="w-4 h-4 text-[#E5C07B] flex-shrink-0" />
+              <ChevronLeft className="w-4.5 h-4.5 text-[#E5C07B] flex-shrink-0" />
               <span className="truncate">{prevStudentName ? `上一位：${prevStudentName}` : '已是第一位'}</span>
             </button>
           )}
@@ -523,16 +553,16 @@ export const FlipViewerModal: React.FC<FlipViewerModalProps> = ({
             ))}
           </div>
 
-          {/* 下一位學生：璀璨香檳黑金膠囊按鈕 */}
+          {/* 下一位學生：稍粗圓體、字號大一號 */}
           {!isPrivateMode && (
             <button
               type="button"
               disabled={!nextStudentName}
               onClick={goToNextStudent}
-              className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-extrabold text-[#070B12] bg-gradient-to-r from-[#F3D17A] via-[#E5C07B] to-[#D4AF37] hover:brightness-110 disabled:opacity-30 disabled:pointer-events-none rounded-xl shadow-lg shadow-[#D4AF37]/20 active:scale-95 transition-all truncate cursor-pointer"
+              className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 font-rounded font-black text-sm sm:text-base text-[#070B12] bg-gradient-to-r from-[#F3D17A] via-[#E5C07B] to-[#D4AF37] hover:brightness-110 disabled:opacity-30 disabled:pointer-events-none rounded-xl shadow-lg shadow-[#D4AF37]/20 active:scale-95 transition-all truncate cursor-pointer"
             >
               <span className="truncate">{nextStudentName ? `下一位：${nextStudentName}` : '已是最後一位'}</span>
-              <ChevronRight className="w-4 h-4 text-[#070B12] flex-shrink-0" />
+              <ChevronRight className="w-4.5 h-4.5 text-[#070B12] flex-shrink-0" />
             </button>
           )}
         </div>
