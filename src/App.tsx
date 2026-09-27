@@ -19,7 +19,6 @@ import { UploadModal } from './components/UploadModal';
 import { FlipViewerModal } from './components/FlipViewerModal';
 import { StudentPrivateView } from './components/StudentPrivateView';
 import { ShareModal } from './components/ShareModal';
-import { FirebaseGuideModal } from './components/FirebaseGuideModal';
 import { CreateBookModal } from './components/CreateBookModal';
 import { BookOpen, UploadCloud, Users, ArrowLeft, Download, Loader2, ShieldCheck, ShieldAlert, Calendar, ArrowRight, Cloud } from 'lucide-react';
 import { downloadBookImages } from './utils/zipExporter';
@@ -43,7 +42,6 @@ export const App: React.FC = () => {
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [shareModalBook, setShareModalBook] = useState<ExamBook | null>(null);
-  const [isGuideOpen, setIsGuideOpen] = useState(false);
   const [viewerStudent, setViewerStudent] = useState<string | null>(null);
   const [viewerPageIndex, setViewerPageIndex] = useState(0);
   const [isViewOnly, setIsViewOnly] = useState(false);
@@ -176,13 +174,6 @@ export const App: React.FC = () => {
     }
   };
 
-  useEffect(() => {
-    // 網頁啟動 1.5 秒後背景自動執行一次全量補推（確保離線或新冊自動上雲端）
-    const timer = setTimeout(() => {
-      handleManualSync();
-    }, 1500);
-    return () => clearTimeout(timer);
-  }, []);
 
   // 當前選取的冊子
   const currentBook = books.find((b) => b.id === currentBookId) || books[0] || null;
@@ -343,7 +334,6 @@ export const App: React.FC = () => {
           setShareModalBook(currentBook);
           setIsShareModalOpen(true);
         }}
-        onOpenCloudGuide={() => setIsGuideOpen(true)}
         activeTab={activeTab}
         onTabChange={setActiveTab}
         isViewOnly={isViewOnly}
@@ -552,12 +542,6 @@ export const App: React.FC = () => {
         />
       )}
 
-      {/* 雲端同步與權限開通指南彈窗 */}
-      <FirebaseGuideModal
-        currentBook={currentBook}
-        isOpen={isGuideOpen}
-        onClose={() => setIsGuideOpen(false)}
-      />
 
       {/* 上傳彈窗 */}
       {currentBook && (

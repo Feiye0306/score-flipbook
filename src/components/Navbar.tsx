@@ -30,7 +30,6 @@ interface NavbarProps {
   onSearchChange: (q: string) => void;
   onOpenUpload: () => void;
   onOpenShare?: () => void;
-  onOpenCloudGuide?: () => void;
   activeTab?: 'shelf' | 'book';
   onTabChange?: (tab: 'shelf' | 'book') => void;
   isViewOnly?: boolean;
@@ -50,7 +49,6 @@ export const Navbar: React.FC<NavbarProps> = ({
   onSearchChange,
   onOpenUpload,
   onOpenShare,
-  onOpenCloudGuide,
   activeTab = 'shelf',
   onTabChange,
   isViewOnly = false,
@@ -84,50 +82,12 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
 
           <div className="min-w-0">
-            <div className="flex items-center gap-2">
-              <h1 
-                onClick={() => onTabChange?.('shelf')}
-                className="font-black text-[#6E3E26] text-lg sm:text-2xl leading-tight flex items-center gap-1 font-rounded tracking-tight cursor-pointer hover:opacity-85 transition-opacity truncate"
-              >
-                圖文翻閱冊
-              </h1>
-
-              {/* 雲端同步狀態標籤 */}
-              <button
-                type="button"
-                onClick={onOpenCloudGuide}
-                className={`inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-medium px-2 py-0.5 rounded-full flex-shrink-0 cursor-pointer transition-all hover:shadow-xs active:scale-95 ${
-                  isCloudPermissionDenied
-                    ? 'bg-amber-100 text-amber-900 border border-amber-300 hover:bg-amber-200'
-                    : isFirebaseConfigured
-                    ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
-                    : 'bg-stone-100 text-stone-700 border border-stone-200'
-                }`}
-                title={
-                  isCloudPermissionDenied
-                    ? "目前資料暫存於此電腦瀏覽器。點擊查看如何開通雲端以供手機跨裝置同步分享。"
-                    : "雲端同步狀態"
-                }
-              >
-                {isCloudPermissionDenied ? (
-                  <>
-                    <AlertTriangle className="w-3 h-3 text-amber-700" />
-                    <span>本機暫存 (點擊設定雲端)</span>
-                  </>
-                ) : isFirebaseConfigured ? (
-                  <>
-                    <Cloud className="w-3 h-3 text-emerald-600 animate-pulse" />
-                    <span className="hidden sm:inline">雲端同步中</span>
-                    <span className="sm:hidden">雲端</span>
-                  </>
-                ) : (
-                  <>
-                    <HardDrive className="w-3 h-3 text-stone-500" />
-                    <span>本地模式</span>
-                  </>
-                )}
-              </button>
-            </div>
+            <h1 
+              onClick={() => onTabChange?.('shelf')}
+              className="font-black text-[#6E3E26] text-lg sm:text-2xl leading-tight flex items-center gap-1 font-rounded tracking-tight cursor-pointer hover:opacity-85 transition-opacity truncate"
+            >
+              圖文翻閱冊
+            </h1>
 
             {/* 僅在進入單冊時顯示返回導航 */}
             {!isSingleBookMode && activeTab === 'book' && (
@@ -189,33 +149,33 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           {currentBook && (
             <>
-              {/* 備份按鈕 */}
+              {/* 備份按鈕 (桌面版顯示) */}
               <button
                 type="button"
                 onClick={() => exportBookBackup(currentBook)}
-                className="inline-flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 text-xs font-bold text-[#6E3E26] bg-white border border-[#6E3E26]/30 hover:border-[#6E3E26] hover:bg-[#6E3E26]/5 rounded-full shadow-2xs transition-all cursor-pointer"
+                className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold text-[#6E3E26] bg-white border border-[#6E3E26]/30 hover:border-[#6E3E26] hover:bg-[#6E3E26]/5 rounded-full shadow-2xs transition-all cursor-pointer"
                 title="下載此冊完整資料備份 (JSON)"
               >
                 <Download className="w-3.5 h-3.5 text-[#6E3E26]" />
-                <span className="hidden sm:inline">備份</span>
+                <span>備份</span>
               </button>
 
-              {/* 回復按鈕 */}
+              {/* 回復按鈕 (桌面版顯示) */}
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="inline-flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 text-xs font-bold text-[#6E3E26] bg-white border border-[#6E3E26]/30 hover:border-[#6E3E26] hover:bg-[#6E3E26]/5 rounded-full shadow-2xs transition-all cursor-pointer"
+                className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold text-[#6E3E26] bg-white border border-[#6E3E26]/30 hover:border-[#6E3E26] hover:bg-[#6E3E26]/5 rounded-full shadow-2xs transition-all cursor-pointer"
                 title="從備份檔回復/匯入成績冊 (JSON)"
               >
                 <Upload className="w-3.5 h-3.5 text-[#6E3E26]" />
-                <span className="hidden sm:inline">回復</span>
+                <span>回復</span>
               </button>
 
-              {/* 分享本冊 */}
+              {/* 分享本冊 (桌面版顯示，手機版可從書架卡片直接分享) */}
               <button
                 type="button"
                 onClick={() => onOpenShare?.()}
-                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold text-[#6E3E26] bg-white hover:bg-[#6E3E26]/5 border border-[#6E3E26]/30 hover:border-[#6E3E26] rounded-full shadow-2xs transition-all cursor-pointer whitespace-nowrap"
+                className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold text-[#6E3E26] bg-white hover:bg-[#6E3E26]/5 border border-[#6E3E26]/30 hover:border-[#6E3E26] rounded-full shadow-2xs transition-all cursor-pointer whitespace-nowrap"
                 title="取得分享連結 (可選協作上傳或唯讀翻閱)"
               >
                 <Share2 className="w-3.5 h-3.5 text-[#6E3E26]" />

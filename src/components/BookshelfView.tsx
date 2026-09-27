@@ -348,16 +348,16 @@ export const BookshelfView: React.FC<BookshelfViewProps> = ({
                       <Download className="w-4 h-4 text-[#16202A]" />
                     </button>
 
-                    {/* 刪除 (中間大小：w-9 h-9，icon w-4 h-4) */}
-                    {books.length > 1 && !isViewOnly && (
+                    {/* 刪除按鈕：無論冊數多寡均永遠顯示，徹底解決時出現時消失問題 */}
+                    {!isViewOnly && (
                       <button
                         type="button"
                         onClick={() => {
-                          if (confirm(`確定要刪除冊子「${book.title}」及其所有圖片嗎？`)) {
+                          if (confirm(`確定要刪除冊子「${book.title}」及其所有圖片嗎？刪除後無法復原。`)) {
                             onDeleteBook(book.id);
                           }
                         }}
-                        className="inline-flex items-center justify-center w-9 h-9 text-stone-400 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors cursor-pointer border border-[#D6E1EA] flex-shrink-0"
+                        className="inline-flex items-center justify-center w-9 h-9 text-stone-400 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors cursor-pointer border border-[#D6E1EA] hover:border-red-300 flex-shrink-0"
                         title="刪除此冊"
                       >
                         <Trash2 className="w-4 h-4" />

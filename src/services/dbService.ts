@@ -15,9 +15,35 @@ import type { ExamBook, ScoreImage, StudentFolder } from '../types';
 const COLLECTION_NAME = 'score_books';
 const LOCAL_STORAGE_KEY = 'score_flipbook_local_data';
 const MY_BOOK_IDS_KEY = 'score_flipbook_my_ids';
+const DELETED_BOOKS_KEY = 'score_flipbook_deleted_books';
 
 // 狀態：記錄 Firebase 是否報權限錯誤
 export let isCloudPermissionDenied = false;
+
+// 墓碑管理：記錄已被刪除的冊子 ID，防止跨裝置自動同步時殭屍復活
+export function getDeletedBookIds(): string[] {
+  try {
+    const raw = localStorage.getItem(DELETED_BOOKS_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function markBookAsDeleted(bookId: string): void {
+  try {
+    const ids = new Set(getDeletedBookIds());
+    ids.add(bookId);
+    localStorage.setItem(DELETED_BOOKS_KEY, JSON.stringify(Array.from(ids)));
+  } catch (err) {
+    console.warn('記錄墓碑冊子 ID 警訊：', err);
+  }
+}
+
+export function isBookMarkedDeleted(bookId: string): boolean {
+  const ids = new Set(getDeletedBookIds());
+  return ids.has(bookId);
+}
 
 // 取得本機登記擁有的冊子 ID 清單
 export function getRegisteredBookIds(): string[] {
@@ -31,6 +57,13 @@ export function getRegisteredBookIds(): string[] {
 
 export function registerBookId(bookId: string): void {
   try {
+    // 若重新註冊或建立，從墓碑清單移除
+    const deletedIds = new Set(getDeletedBookIds());
+    if (deletedIds.has(bookId)) {
+      deletedIds.delete(bookId);
+      localStorage.setItem(DELETED_BOOKS_KEY, JSON.stringify(Array.from(deletedIds)));
+    }
+
     const ids = new Set(getRegisteredBookIds());
     ids.add(bookId);
     localStorage.setItem(MY_BOOK_IDS_KEY, JSON.stringify(Array.from(ids)));
@@ -190,23 +223,22 @@ export function subscribeBooks(
         (colSnap) => {
           const current = getLocalBooks();
           if (!current[bookId]) return;
-          const studentsMap = { ...(current[bookId].students || {}) };
-          let changed = false;
+
+          // 嚴格以雲端子集合現存成員為準，雲端刪除某成員時，本地同步移除！
+          const studentsMap: Record<string, StudentFolder> = {};
           colSnap.forEach((mSnap) => {
             if (mSnap.exists()) {
               const folder = mSnap.data() as StudentFolder;
               studentsMap[folder.studentName] = folder;
-              changed = true;
             }
           });
-          if (changed) {
-            current[bookId].students = studentsMap;
-            saveLocalBooks(current);
-            const sorted = Object.values(current).sort(
-              (a, b) => (b.updatedAt || 0) - (a.updatedAt || 0)
-            );
-            onUpdate(sorted);
-          }
+
+          current[bookId].students = studentsMap;
+          saveLocalBooks(current);
+          const sorted = Object.values(current).sort(
+            (a, b) => (b.updatedAt || 0) - (a.updatedAt || 0)
+          );
+          onUpdate(sorted);
         },
         () => {}
       );
@@ -232,13 +264,15 @@ export function subscribeBooks(
             if (snap.exists()) {
               isCloudPermissionDenied = false;
               const updated = snap.data() as ExamBook;
+              if (isBookMarkedDeleted(updated.id)) return;
+
               const currentLocal = getLocalBooks();
               currentLocal[updated.id] = {
                 ...(currentLocal[updated.id] || {}),
                 ...updated,
                 students: {
-                  ...(currentLocal[updated.id]?.students || {}),
                   ...(updated.students || {}),
+                  ...(currentLocal[updated.id]?.students || {}),
                 },
               };
               saveLocalBooks(currentLocal);
@@ -248,6 +282,18 @@ export function subscribeBooks(
                 (a, b) => (b.updatedAt || 0) - (a.updatedAt || 0)
               );
               onUpdate(sorted);
+            } else {
+              // 雲端該文檔已不存在，本地同步刪除
+              const currentLocal = getLocalBooks();
+              if (currentLocal[bookId]) {
+                delete currentLocal[bookId];
+                unregisterBookId(bookId);
+                saveLocalBooks(currentLocal);
+                const sorted = Object.values(currentLocal).sort(
+                  (a, b) => (b.updatedAt || 0) - (a.updatedAt || 0)
+                );
+                onUpdate(sorted);
+              }
             }
           },
           (err) => {
@@ -273,19 +319,41 @@ export function subscribeBooks(
       (snap) => {
         isCloudPermissionDenied = false;
         const currentLocal = getLocalBooks();
+        const cloudIds = new Set<string>();
+
         snap.forEach((docSnap) => {
           if (docSnap.exists()) {
             const cloudBook = docSnap.data() as ExamBook;
+            cloudIds.add(cloudBook.id);
+
+            // 若本機已手動標記為刪除，跳過不寫入
+            if (isBookMarkedDeleted(cloudBook.id)) {
+              delete currentLocal[cloudBook.id];
+              return;
+            }
+
             registerBookId(cloudBook.id);
             currentLocal[cloudBook.id] = {
               ...(currentLocal[cloudBook.id] || {}),
               ...cloudBook,
               students: {
-                ...(currentLocal[cloudBook.id]?.students || {}),
                 ...(cloudBook.students || {}),
+                ...(currentLocal[cloudBook.id]?.students || {}),
               },
             };
             attachMembersListener(cloudBook.id);
+          }
+        });
+
+        // 關鍵同步規則：雲端集合中已經不存在的冊子，本地必須鏡像刪除！
+        Object.keys(currentLocal).forEach((localId) => {
+          if (!cloudIds.has(localId)) {
+            // 剛在本地建立未滿 5 秒且未被刪除者給予同步緩衝，其餘一律同步清除
+            const isJustCreated = Date.now() - (currentLocal[localId]?.createdAt || 0) < 5000;
+            if (!isJustCreated || isBookMarkedDeleted(localId)) {
+              delete currentLocal[localId];
+              unregisterBookId(localId);
+            }
           }
         });
 
@@ -296,7 +364,7 @@ export function subscribeBooks(
         onUpdate(sorted);
       },
       (err) => {
-        console.warn('全集合即時監聽受阻（可能設有防爬蟲安全規則），切換為已註冊清單監聽：', err.message);
+        console.warn('全集合即時監聽受阻，切換為精準監聽：', err.message);
         isCloudPermissionDenied = true;
         if (onPermissionWarning) onPermissionWarning();
         startFallback();
@@ -438,22 +506,29 @@ export async function saveExamBook(book: ExamBook): Promise<void> {
 }
 
 /**
- * 刪除冊子
+ * 刪除冊子 (徹底清除雲端父文檔、所有成員子集合、本機快取與註冊，並登記墓碑防死灰復燃)
  */
 export async function deleteExamBook(bookId: string): Promise<void> {
-  // 1. 本地立即刪除
+  // 1. 本地立即刪除並寫入墓碑標記，杜絕任何裝置再度復活
+  markBookAsDeleted(bookId);
   unregisterBookId(bookId);
   const local = getLocalBooks();
   delete local[bookId];
   saveLocalBooks(local);
 
-  // 2. 異步同步至雲端
+  // 2. 徹底同步刪除雲端：清空 members 子集合所有成員與圖片，再刪除父文檔
   if (isFirebaseConfigured && db) {
     try {
-      const docRef = doc(db, COLLECTION_NAME, bookId);
+      const firestoreDb = db;
+      const membersCol = collection(firestoreDb, COLLECTION_NAME, bookId, 'members');
+      const membersSnap = await getDocs(membersCol);
+      const deletePromises = membersSnap.docs.map((d) => deleteDoc(d.ref));
+      await Promise.all(deletePromises);
+
+      const docRef = doc(firestoreDb, COLLECTION_NAME, bookId);
       await deleteDoc(docRef);
     } catch (err: any) {
-      console.warn('雲端刪除失敗：', err.message);
+      console.warn('雲端徹底刪除失敗：', err.message);
     }
   }
 }
@@ -592,13 +667,31 @@ export async function syncLocalBooksToCloud(): Promise<void> {
   const firestoreDb = db;
   for (const book of bookList) {
     if (!book.id || !book.title) continue;
+    // 若已被記錄為刪除，跳過且從本地清除
+    if (isBookMarkedDeleted(book.id)) {
+      delete localMap[book.id];
+      saveLocalBooks(localMap);
+      continue;
+    }
+
     try {
       const docRef = doc(firestoreDb, COLLECTION_NAME, book.id);
       const snap = await getDoc(docRef);
 
-      // 若雲端父文檔不存在，或更新時間較舊，進行補同步
+      if (!snap.exists()) {
+        // 雲端文檔不存在：若建立時間超過 15 秒，視為在其他裝置被刪除，清理本地快取，絕不盲目補推！
+        const isFresh = Date.now() - (book.createdAt || 0) < 15000;
+        if (!isFresh) {
+          delete localMap[book.id];
+          unregisterBookId(book.id);
+          saveLocalBooks(localMap);
+          continue;
+        }
+      }
+
+      // 若雲端父文檔更新時間較舊，進行補同步
       if (!snap.exists() || (snap.data()?.updatedAt || 0) < (book.updatedAt || 0)) {
-        console.info(`[AutoSync] 正在將本機冊子「${book.title}」同步至雲端...`);
+        console.info(`[AutoSync] 正在將新冊子「${book.title}」同步至雲端...`);
         // 1. 寫入乾淨父文檔 metadata (免除 1MB 限制)
         await setDoc(docRef, {
           id: book.id,
@@ -630,8 +723,7 @@ export interface ForceSyncResult {
 }
 
 /**
- * 強制全量同步本機所有冊子與圖片至雲端 (含即時進度回報)
- * 點擊按鈕或啟動時執行，保證本機「2026高三一模成績單」等所有資料 100% 完整灌入 Firebase！
+ * 強制全量同步本機所有有效冊子與圖片至雲端 (排除已被刪除的冊子)
  */
 export async function forceSyncAllToCloud(
   onProgress?: (message: string) => void
@@ -652,6 +744,9 @@ export async function forceSyncAllToCloud(
   const firestoreDb = db;
   for (const book of bookList) {
     if (!book.id || !book.title) continue;
+    // 墓碑過濾：已被刪除的冊子絕對不能推上雲端！
+    if (isBookMarkedDeleted(book.id)) continue;
+
     onProgress?.(`正在將「${book.title}」中繼資料推上雲端...`);
 
     try {
