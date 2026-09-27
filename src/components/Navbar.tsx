@@ -35,6 +35,8 @@ interface NavbarProps {
   onTabChange?: (tab: 'shelf' | 'book') => void;
   isViewOnly?: boolean;
   isSingleBookMode?: boolean;
+  onManualSync?: () => void;
+  isSyncing?: boolean;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -53,6 +55,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   onTabChange,
   isViewOnly = false,
   isSingleBookMode = false,
+  onManualSync,
+  isSyncing = false,
 }) => {
   const [isCreating, setIsCreating] = useState(false);
   const [newTitle, setNewTitle] = useState('');
@@ -218,6 +222,21 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <span>分享</span>
               </button>
             </>
+          )}
+
+          {/* 強制一鍵同步至雲端按鈕 */}
+          {onManualSync && (
+            <button
+              type="button"
+              onClick={onManualSync}
+              disabled={isSyncing}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 rounded-full shadow-2xs transition-all cursor-pointer disabled:opacity-50 whitespace-nowrap active:scale-95"
+              title="立即將本機所有冊子（高三一模等）完整同步上傳至雲端資料庫"
+            >
+              <Cloud className={`w-3.5 h-3.5 text-emerald-600 ${isSyncing ? 'animate-bounce' : ''}`} />
+              <span className="hidden sm:inline">{isSyncing ? '同步中...' : '同步雲端'}</span>
+              <span className="sm:hidden">{isSyncing ? '同步中' : '同步'}</span>
+            </button>
           )}
 
           {!isViewOnly && (

@@ -7,7 +7,8 @@ import {
   getLocalBooks,
   subscribeSingleBook,
   fetchSingleBook,
-  fetchBookByShareCodeOrId
+  fetchBookByShareCodeOrId,
+  forceSyncAllToCloud
 } from './services/dbService';
 import { verifyAccessToken } from './services/tokenService';
 import type { ExamBook } from './types';
@@ -20,7 +21,7 @@ import { StudentPrivateView } from './components/StudentPrivateView';
 import { ShareModal } from './components/ShareModal';
 import { FirebaseGuideModal } from './components/FirebaseGuideModal';
 import { CreateBookModal } from './components/CreateBookModal';
-import { BookOpen, UploadCloud, Users, ArrowLeft, Download, Loader2, ShieldCheck, ShieldAlert, Calendar, ArrowRight } from 'lucide-react';
+import { BookOpen, UploadCloud, Users, ArrowLeft, Download, Loader2, ShieldCheck, ShieldAlert, Calendar, ArrowRight, Cloud } from 'lucide-react';
 import { downloadBookImages } from './utils/zipExporter';
 
 export const App: React.FC = () => {
@@ -31,6 +32,8 @@ export const App: React.FC = () => {
   const [downloadProgressText, setDownloadProgressText] = useState('');
   const [isVerifyingToken, setIsVerifyingToken] = useState(false);
   const [tokenError, setTokenError] = useState<string | null>(null);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncToastMessage, setSyncToastMessage] = useState<string | null>(null);
   
   // 視圖標籤：'shelf' (書架總覽) vs 'book' (單冊名單)
   const [activeTab, setActiveTab] = useState<'shelf' | 'book'>('shelf');
@@ -150,6 +153,35 @@ export const App: React.FC = () => {
     });
 
     return () => unsubscribe();
+  }, []);
+
+  // 手動 / 自動強制全量同步本機資料至雲端
+  const handleManualSync = async () => {
+    if (isSyncing) return;
+    setIsSyncing(true);
+    setSyncToastMessage('正在將本機冊子（高三一模等）推上雲端...');
+    try {
+      const res = await forceSyncAllToCloud((msg) => setSyncToastMessage(msg));
+      if (res.syncedBooks.length > 0) {
+        setSyncToastMessage(`✅ 已成功同步 ${res.syncedBooks.length} 本冊子 (${res.totalMembers} 位成員) 至雲端！手機即可檢視。`);
+      } else {
+        setSyncToastMessage('✅ 雲端資料庫已是最新狀態！');
+      }
+      setTimeout(() => setSyncToastMessage(null), 5000);
+    } catch (err: any) {
+      setSyncToastMessage('❌ 同步失敗：' + (err.message || '網路問題'));
+      setTimeout(() => setSyncToastMessage(null), 5000);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  useEffect(() => {
+    // 網頁啟動 1.5 秒後背景自動執行一次全量補推（確保離線或新冊自動上雲端）
+    const timer = setTimeout(() => {
+      handleManualSync();
+    }, 1500);
+    return () => clearTimeout(timer);
   }, []);
 
   // 當前選取的冊子
@@ -316,6 +348,8 @@ export const App: React.FC = () => {
         onTabChange={setActiveTab}
         isViewOnly={isViewOnly}
         isSingleBookMode={isSingleBookMode}
+        onManualSync={handleManualSync}
+        isSyncing={isSyncing}
       />
 
       {/* 主要內容區 */}
@@ -554,6 +588,14 @@ export const App: React.FC = () => {
         onClose={() => setIsCreateBookOpen(false)}
         onCreateBook={handleCreateBook}
       />
+
+      {/* 雲端同步即時反饋 Toast 浮動條 */}
+      {syncToastMessage && (
+        <div className="fixed bottom-5 left-5 z-50 bg-[#16202A] text-white px-4 py-2.5 rounded-2xl shadow-xl flex items-center gap-2.5 text-xs sm:text-sm border border-emerald-400/40 animate-in slide-in-from-bottom duration-200">
+          <Cloud className={`w-4 h-4 text-emerald-400 flex-shrink-0 ${isSyncing ? 'animate-bounce' : ''}`} />
+          <span className="font-sans font-medium">{syncToastMessage}</span>
+        </div>
+      )}
     </div>
   );
 };

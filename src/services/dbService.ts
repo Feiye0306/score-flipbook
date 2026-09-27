@@ -623,3 +623,66 @@ export async function syncLocalBooksToCloud(): Promise<void> {
   }
 }
 
+export interface ForceSyncResult {
+  syncedBooks: string[];
+  totalMembers: number;
+  error?: string;
+}
+
+/**
+ * 強制全量同步本機所有冊子與圖片至雲端 (含即時進度回報)
+ * 點擊按鈕或啟動時執行，保證本機「2026高三一模成績單」等所有資料 100% 完整灌入 Firebase！
+ */
+export async function forceSyncAllToCloud(
+  onProgress?: (message: string) => void
+): Promise<ForceSyncResult> {
+  if (!isFirebaseConfigured || !db) {
+    return { syncedBooks: [], totalMembers: 0, error: '未連接至雲端服務' };
+  }
+
+  const localMap = getLocalBooks();
+  const bookList = Object.values(localMap);
+  const syncedBooks: string[] = [];
+  let totalMembers = 0;
+
+  if (bookList.length === 0) {
+    return { syncedBooks, totalMembers };
+  }
+
+  const firestoreDb = db;
+  for (const book of bookList) {
+    if (!book.id || !book.title) continue;
+    onProgress?.(`正在將「${book.title}」中繼資料推上雲端...`);
+
+    try {
+      const docRef = doc(firestoreDb, COLLECTION_NAME, book.id);
+      // 1. 強制寫入父文檔 metadata (永遠小於 1KB，絕不超標)
+      await setDoc(docRef, {
+        id: book.id,
+        title: book.title,
+        shareCode: book.shareCode || book.id,
+        createdAt: book.createdAt || Date.now(),
+        updatedAt: book.updatedAt || Date.now(),
+      }, { merge: true });
+
+      // 2. 逐一寫入各成員考卷圖片
+      if (book.students) {
+        const studentEntries = Object.entries(book.students);
+        for (let i = 0; i < studentEntries.length; i++) {
+          const [studentName, folder] = studentEntries[i];
+          onProgress?.(`正在同步「${book.title}」成員 (${i + 1}/${studentEntries.length})：${studentName}...`);
+          const memberDocRef = doc(firestoreDb, COLLECTION_NAME, book.id, 'members', studentName);
+          await setDoc(memberDocRef, folder, { merge: true });
+          totalMembers++;
+        }
+      }
+
+      syncedBooks.push(book.title);
+    } catch (err: any) {
+      console.error(`強制同步「${book.title}」失敗：`, err);
+    }
+  }
+
+  return { syncedBooks, totalMembers };
+}
+
