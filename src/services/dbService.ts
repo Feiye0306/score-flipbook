@@ -412,11 +412,18 @@ export async function saveExamBook(book: ExamBook): Promise<void> {
   local[book.id] = updatedBook;
   saveLocalBooks(local);
 
-  // 2. 異步同步至 Firebase
+  // 2. 異步同步至 Firebase (只存輕量中繼資料，圖片獨立於 members 子集合，免除 1MB 上限！)
   if (isFirebaseConfigured && db) {
     try {
       const docRef = doc(db, COLLECTION_NAME, book.id);
-      await setDoc(docRef, updatedBook, { merge: true });
+      const cleanBookMeta = {
+        id: updatedBook.id,
+        title: updatedBook.title,
+        shareCode: updatedBook.shareCode || updatedBook.id,
+        createdAt: updatedBook.createdAt,
+        updatedAt: updatedBook.updatedAt,
+      };
+      await setDoc(docRef, cleanBookMeta, { merge: true });
       isCloudPermissionDenied = false;
     } catch (err: any) {
       console.warn('⚠️ 雲端同步受阻 (儲存於本機暫存中)：', err.message);
