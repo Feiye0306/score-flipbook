@@ -4,6 +4,7 @@ import {
   saveExamBook, 
   deleteExamBook, 
   removeStudentFolder,
+  removeStudentImage,
   getLocalBooks,
   subscribeSingleBook,
   fetchSingleBook,
@@ -221,16 +222,44 @@ export const App: React.FC = () => {
     });
   };
 
-  // 刪除學生 (樂觀立即更新)
-  const handleDeleteStudent = async (studentName: string) => {
-    if (!currentBook) return;
-    await removeStudentFolder(currentBook.id, studentName);
+  // 刪除成員 (支援指定冊子或當前冊子，樂觀立即更新)
+  const handleDeleteStudent = async (studentNameOrBookId: string, maybeStudentName?: string) => {
+    const bookId = maybeStudentName ? studentNameOrBookId : (currentBook?.id || currentBookId);
+    const targetStudentName = maybeStudentName || studentNameOrBookId;
+    if (!bookId || !targetStudentName) return;
+
+    await removeStudentFolder(bookId, targetStudentName);
     setBooks((prev) =>
       prev.map((b) => {
-        if (b.id !== currentBook.id) return b;
+        if (b.id !== bookId) return b;
         const newStudents = { ...b.students };
-        delete newStudents[studentName];
+        delete newStudents[targetStudentName];
         return { ...b, students: newStudents, updatedAt: Date.now() };
+      })
+    );
+  };
+
+  // 刪除成員的特定單張圖片
+  const handleDeleteImage = async (bookId: string, studentName: string, imageId: string) => {
+    if (!bookId || !studentName || !imageId) return;
+    await removeStudentImage(bookId, studentName, imageId);
+    setBooks((prev) =>
+      prev.map((b) => {
+        if (b.id !== bookId || !b.students?.[studentName]) return b;
+        const folder = b.students[studentName];
+        const newImages = folder.images.filter((img) => img.id !== imageId);
+        return {
+          ...b,
+          students: {
+            ...b.students,
+            [studentName]: {
+              ...folder,
+              images: newImages,
+              updatedAt: Date.now(),
+            },
+          },
+          updatedAt: Date.now(),
+        };
       })
     );
   };
@@ -360,6 +389,7 @@ export const App: React.FC = () => {
             }}
             onCreateBookClick={() => setIsCreateBookOpen(true)}
             onDeleteBook={handleDeleteBook}
+            onDeleteStudent={(bookId, studentName) => handleDeleteStudent(bookId, studentName)}
             isViewOnly={isViewOnly}
           />
         ) : currentBook ? (
@@ -563,6 +593,9 @@ export const App: React.FC = () => {
           initialPageIndex={viewerPageIndex}
           isOpen={!!viewerStudent}
           onClose={() => setViewerStudent(null)}
+          onDeleteStudent={(bookId, studentName) => handleDeleteStudent(bookId, studentName)}
+          onDeleteImage={(bookId, studentName, imageId) => handleDeleteImage(bookId, studentName, imageId)}
+          isViewOnly={isViewOnly}
         />
       )}
 

@@ -135,6 +135,7 @@ interface BookshelfViewProps {
   onOpenShareModal: (book: ExamBook) => void;
   onCreateBookClick: () => void;
   onDeleteBook: (bookId: string) => void;
+  onDeleteStudent?: (bookId: string, studentName: string) => Promise<void> | void;
   isViewOnly?: boolean;
 }
 
@@ -158,6 +159,7 @@ export const BookshelfView: React.FC<BookshelfViewProps> = ({
   onOpenShareModal,
   onCreateBookClick,
   onDeleteBook,
+  onDeleteStudent,
   isViewOnly = false,
 }) => {
   const [quickListBook, setQuickListBook] = useState<ExamBook | null>(null);
@@ -445,7 +447,7 @@ export const BookshelfView: React.FC<BookshelfViewProps> = ({
                           </p>
                           <p className="text-xs text-stone-500 font-medium">{imgCount} 張圖片</p>
                         </div>
-                        <div className="flex items-center gap-1.5 flex-shrink-0">
+                        <div className="flex items-center gap-1 flex-shrink-0">
                           <button
                             type="button"
                             onClick={(e) => {
@@ -458,6 +460,29 @@ export const BookshelfView: React.FC<BookshelfViewProps> = ({
                           >
                             <Download className="w-4 h-4" />
                           </button>
+
+                          {!isViewOnly && onDeleteStudent && (
+                            <button
+                              type="button"
+                              onClick={async (e) => {
+                                e.stopPropagation();
+                                if (confirm(`確定要刪除成員「${personName}」及其所有圖片嗎？`)) {
+                                  await onDeleteStudent(quickListBook.id, personName);
+                                  setQuickListBook((prev) => {
+                                    if (!prev) return null;
+                                    const nextStudents = { ...prev.students };
+                                    delete nextStudents[personName];
+                                    return { ...prev, students: nextStudents };
+                                  });
+                                }
+                              }}
+                              className="p-1.5 text-stone-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                              title={`刪除成員 ${personName}`}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          )}
+
                           <button
                             type="button"
                             onClick={() => {

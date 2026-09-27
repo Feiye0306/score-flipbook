@@ -12,7 +12,8 @@ import {
   BookOpen,
   List,
   Search,
-  FileText
+  FileText,
+  Trash2
 } from 'lucide-react';
 import type { ExamBook, StudentFolder, ScoreImage } from '../types';
 
@@ -23,6 +24,9 @@ interface FlipViewerModalProps {
   isOpen: boolean;
   onClose: () => void;
   isPrivateMode?: boolean;
+  isViewOnly?: boolean;
+  onDeleteImage?: (bookId: string, studentName: string, imageId: string) => Promise<void> | void;
+  onDeleteStudent?: (bookId: string, studentName: string) => Promise<void> | void;
 }
 
 export const FlipViewerModal: React.FC<FlipViewerModalProps> = ({
@@ -32,6 +36,9 @@ export const FlipViewerModal: React.FC<FlipViewerModalProps> = ({
   isOpen,
   onClose,
   isPrivateMode = false,
+  isViewOnly = false,
+  onDeleteImage,
+  onDeleteStudent,
 }) => {
   const [currentStudentName, setCurrentStudentName] = useState(initialStudentName);
   const [currentPageIndex, setCurrentPageIndex] = useState(initialPageIndex);
@@ -244,6 +251,61 @@ export const FlipViewerModal: React.FC<FlipViewerModalProps> = ({
     setTimeout(() => setCopiedType(null), 2000);
   };
 
+  // 刪除當前正在檢視的圖片
+  const handleDeleteCurrentImage = async () => {
+    if (!currentImage || isPrivateMode || isViewOnly) return;
+    const isConfirmed = confirm(
+      `確定要刪除成員「${currentStudentName}」的第 ${currentPageIndex + 1} 頁圖片嗎？`
+    );
+    if (!isConfirmed) return;
+
+    const imgId = currentImage.id;
+    if (onDeleteImage) {
+      await onDeleteImage(currentBook.id, currentStudentName, imgId);
+    }
+
+    // 頁碼平滑切換
+    if (images.length > 1) {
+      if (currentPageIndex >= images.length - 1) {
+        setCurrentPageIndex(images.length - 2);
+      }
+    } else {
+      // 該成員唯一一張圖片已刪除
+      if (nextStudentName) {
+        setCurrentStudentName(nextStudentName);
+        setCurrentPageIndex(0);
+      } else if (prevStudentName) {
+        setCurrentStudentName(prevStudentName);
+        setCurrentPageIndex(0);
+      }
+    }
+  };
+
+  // 刪除指定成員
+  const handleDeleteTargetStudent = async (targetName: string, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    if (isPrivateMode || isViewOnly) return;
+    const isConfirmed = confirm(`確定要徹底刪除成員「${targetName}」及其所有圖片嗎？`);
+    if (!isConfirmed) return;
+
+    if (onDeleteStudent) {
+      await onDeleteStudent(currentBook.id, targetName);
+    }
+
+    // 若刪除的是當前正在檢視的成員，切換至相鄰成員
+    if (targetName === currentStudentName) {
+      const remaining = studentNames.filter((n) => n !== targetName);
+      if (remaining.length > 0) {
+        const nextIdx = studentNames.indexOf(targetName);
+        const newTarget = remaining[nextIdx] || remaining[remaining.length - 1];
+        setCurrentStudentName(newTarget);
+        setCurrentPageIndex(0);
+      } else {
+        onClose();
+      }
+    }
+  };
+
   // 目錄搜尋過濾
   const filteredDirectory = studentNames.filter((name) => 
     !directorySearch.trim() || name.toLowerCase().includes(directorySearch.trim().toLowerCase())
@@ -361,11 +423,23 @@ export const FlipViewerModal: React.FC<FlipViewerModalProps> = ({
               download={`${currentStudentName}_第${currentPageIndex + 1}頁.jpg`}
               target="_blank"
               rel="noopener noreferrer"
-              className="p-2 text-stone-300 hover:text-white hover:bg-white/10 rounded-full transition-colors hidden sm:inline-flex"
+              className="p-1.5 sm:p-2 text-stone-300 hover:text-white hover:bg-white/10 rounded-full transition-colors hidden sm:inline-flex"
               title="下載或原圖查看"
             >
               <Download className="w-4 h-4" />
             </a>
+          )}
+
+          {/* 刪除此頁圖片按鈕 */}
+          {!isPrivateMode && !isViewOnly && currentImage && (
+            <button
+              type="button"
+              onClick={handleDeleteCurrentImage}
+              className="p-1.5 sm:p-2 text-stone-400 hover:text-red-400 hover:bg-red-500/15 rounded-full transition-colors cursor-pointer"
+              title="刪除此頁圖片"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
           )}
 
           {/* 關閉按鈕 */}
@@ -424,32 +498,51 @@ export const FlipViewerModal: React.FC<FlipViewerModalProps> = ({
                 const isSelected = name === currentStudentName;
 
                 return (
-                  <button
+                  <div
                     key={name}
-                    type="button"
-                    onClick={() => {
-                      resetTransform();
-                      setCurrentStudentName(name);
-                      setCurrentPageIndex(0);
-                    }}
-                    className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-rounded text-sm sm:text-base transition-all text-left cursor-pointer ${
+                    className={`w-full flex items-center justify-between px-3 py-2 rounded-xl font-rounded text-sm sm:text-base transition-all group ${
                       isSelected
                         ? 'bg-gradient-to-r from-[#F3D17A] to-[#D4AF37] text-[#070B12] font-black shadow-md'
                         : 'text-[#E5C07B] hover:bg-white/5 hover:text-[#F3D17A]'
                     }`}
                   >
-                    <div className="flex items-center gap-2.5 truncate">
+                    <div 
+                      onClick={() => {
+                        resetTransform();
+                        setCurrentStudentName(name);
+                        setCurrentPageIndex(0);
+                      }}
+                      className="flex items-center gap-2.5 truncate flex-1 cursor-pointer"
+                    >
                       <span className={`w-5 text-xs font-mono font-bold ${isSelected ? 'text-[#070B12]/80' : 'text-[#D4AF37]/60'}`}>
                         {idx + 1}.
                       </span>
                       <span className="truncate">{name}</span>
                     </div>
-                    <span className={`text-xs px-2.5 py-0.5 rounded-full font-bold ${
-                      isSelected ? 'bg-[#070B12]/15 text-[#070B12]' : 'bg-white/5 text-[#E5C07B]/80 border border-[#D4AF37]/20'
-                    }`}>
-                      {pageCount} 頁
-                    </span>
-                  </button>
+
+                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                      <span className={`text-xs px-2 py-0.5 rounded-full font-bold ${
+                        isSelected ? 'bg-[#070B12]/15 text-[#070B12]' : 'bg-white/5 text-[#E5C07B]/80 border border-[#D4AF37]/20'
+                      }`}>
+                        {pageCount} 頁
+                      </span>
+
+                      {!isViewOnly && (
+                        <button
+                          type="button"
+                          onClick={(e) => handleDeleteTargetStudent(name, e)}
+                          className={`p-1 rounded-md transition-colors cursor-pointer ${
+                            isSelected 
+                              ? 'text-[#070B12]/60 hover:text-red-700 hover:bg-black/10' 
+                              : 'text-stone-400 hover:text-red-400 hover:bg-white/10'
+                          }`}
+                          title={`刪除成員「${name}」及其所有圖片`}
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
                 );
               })}
             </div>
