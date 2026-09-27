@@ -172,6 +172,11 @@ export function subscribeBooks(
     return () => {};
   }
 
+  // 背景自動偵測並補推本機尚未同步至雲端的冊子 (例如 2026高三一模成績單)
+  setTimeout(() => {
+    syncLocalBooksToCloud();
+  }, 200);
+
   const firestoreDb = db;
   const memberUnsubscribes: Record<string, () => void> = {};
 
@@ -573,3 +578,48 @@ export async function removeStudentFolder(
     }
   }
 }
+
+/**
+ * 自動將本地所有冊子補同步至雲端 (針對先前因 1MB 限制或離線累積的本地冊子)
+ * 一旦電腦打開頁面，立即將電腦本機的「高三一模」等冊子自動上傳至雲端！
+ */
+export async function syncLocalBooksToCloud(): Promise<void> {
+  if (!isFirebaseConfigured || !db) return;
+  const localMap = getLocalBooks();
+  const bookList = Object.values(localMap);
+  if (bookList.length === 0) return;
+
+  const firestoreDb = db;
+  for (const book of bookList) {
+    if (!book.id || !book.title) continue;
+    try {
+      const docRef = doc(firestoreDb, COLLECTION_NAME, book.id);
+      const snap = await getDoc(docRef);
+
+      // 若雲端父文檔不存在，或更新時間較舊，進行補同步
+      if (!snap.exists() || (snap.data()?.updatedAt || 0) < (book.updatedAt || 0)) {
+        console.info(`[AutoSync] 正在將本機冊子「${book.title}」同步至雲端...`);
+        // 1. 寫入乾淨父文檔 metadata (免除 1MB 限制)
+        await setDoc(docRef, {
+          id: book.id,
+          title: book.title,
+          shareCode: book.shareCode || book.id,
+          createdAt: book.createdAt || Date.now(),
+          updatedAt: book.updatedAt || Date.now(),
+        }, { merge: true });
+
+        // 2. 逐一同步成員子文檔
+        if (book.students) {
+          for (const [studentName, folder] of Object.entries(book.students)) {
+            const memberDocRef = doc(firestoreDb, COLLECTION_NAME, book.id, 'members', studentName);
+            await setDoc(memberDocRef, folder, { merge: true });
+          }
+        }
+        console.info(`[AutoSync] 冊子「${book.title}」已成功同步至雲端！`);
+      }
+    } catch (err) {
+      console.warn(`[AutoSync] 同步「${book.title}」警訊：`, err);
+    }
+  }
+}
+

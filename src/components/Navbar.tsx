@@ -185,26 +185,26 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           {currentBook && (
             <>
-              {/* 桌機版備份按鈕 */}
+              {/* 備份按鈕 */}
               <button
                 type="button"
                 onClick={() => exportBookBackup(currentBook)}
-                className="hidden md:inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold text-[#6E3E26] bg-white border border-[#6E3E26]/30 hover:border-[#6E3E26] hover:bg-[#6E3E26]/5 rounded-full shadow-2xs transition-all cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 text-xs font-bold text-[#6E3E26] bg-white border border-[#6E3E26]/30 hover:border-[#6E3E26] hover:bg-[#6E3E26]/5 rounded-full shadow-2xs transition-all cursor-pointer"
                 title="下載此冊完整資料備份 (JSON)"
               >
                 <Download className="w-3.5 h-3.5 text-[#6E3E26]" />
-                <span>備份</span>
+                <span className="hidden sm:inline">備份</span>
               </button>
 
-              {/* 桌機版回復按鈕 */}
+              {/* 回復按鈕 */}
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="hidden md:inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold text-[#6E3E26] bg-white border border-[#6E3E26]/30 hover:border-[#6E3E26] hover:bg-[#6E3E26]/5 rounded-full shadow-2xs transition-all cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 text-xs font-bold text-[#6E3E26] bg-white border border-[#6E3E26]/30 hover:border-[#6E3E26] hover:bg-[#6E3E26]/5 rounded-full shadow-2xs transition-all cursor-pointer"
                 title="從備份檔回復/匯入成績冊 (JSON)"
               >
                 <Upload className="w-3.5 h-3.5 text-[#6E3E26]" />
-                <span>回復</span>
+                <span className="hidden sm:inline">回復</span>
               </button>
 
               {/* 分享本冊 */}
