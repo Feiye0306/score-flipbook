@@ -25,27 +25,41 @@ export const FirebaseGuideModal: React.FC<FirebaseGuideModalProps> = ({
   isOpen,
   onClose,
 }) => {
+  const [ruleTab, setRuleTab] = useState<'sync' | 'private'>('sync');
   const [copiedFirestore, setCopiedFirestore] = useState(false);
   const [copiedStorage, setCopiedStorage] = useState(false);
 
   if (!isOpen) return null;
 
-  // 1. 專業防順藤摸瓜 Firestore 安全規則：全面禁止 list 遍歷
-  const firestoreRule = `rules_version = '2';
+  // 1. 方案 A：多裝置即時同步規則 (推薦自用 / 手機電腦全自動互通)
+  const firestoreSyncRule = `rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // 🚫 嚴禁任何全庫掃描與遍歷（徹底杜絕順藤摸瓜爬蟲）
+    // 允許 score_books 與其所有成員子集合讀寫 (支援手機、電腦跨設備秒級即時同步)
+    match /score_books/{document=**} {
+      allow read, write: if true;
+    }
+    match /access_tokens/{document=**} {
+      allow read, write: if true;
+    }
+  }
+}`;
+
+  // 2. 方案 B：嚴格隱私防爬蟲模式 (禁止全庫掃描，手機必須點擊特定分享連結才可開啟)
+  const firestorePrivateRule = `rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 🚫 禁止全庫掃描列表
     match /score_books {
       allow list: if false;
     }
+    // 僅憑已知精準 ID 單點讀寫
     match /score_books/{bookId} {
-      // 僅憑已知精確 ID 單點讀寫，外界物理上無法列出任何冊子清單
       allow get, write: if true;
       allow list: if false;
     }
-    // 🚫 Token 安全鑑權層：嚴禁遍歷，僅限單點憑證查驗
-    match /access_tokens {
-      allow list: if false;
+    match /score_books/{bookId}/members/{memberId} {
+      allow read, write: if true;
     }
     match /access_tokens/{token} {
       allow get, write: if true;
@@ -54,7 +68,9 @@ service cloud.firestore {
   }
 }`;
 
-  // 2. Storage 圖片存儲安全規則
+  const currentRule = ruleTab === 'sync' ? firestoreSyncRule : firestorePrivateRule;
+
+  // 3. Storage 圖片存儲安全規則
   const storageRule = `rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
@@ -65,7 +81,7 @@ service firebase.storage {
 }`;
 
   const copyFirestore = () => {
-    navigator.clipboard.writeText(firestoreRule);
+    navigator.clipboard.writeText(currentRule);
     setCopiedFirestore(true);
     setTimeout(() => setCopiedFirestore(false), 2000);
   };
@@ -93,7 +109,7 @@ service firebase.storage {
           </div>
           <div>
             <h3 className="text-base sm:text-lg font-bold text-stone-900 font-serif">
-              雲端開通與安全防護說明
+              雲端開通與跨裝置同步說明
             </h3>
             <p className="text-xs text-stone-500">
               專案 ID：<span className="font-mono text-amber-900 font-bold">my-tools-hub-1fdb1</span>
@@ -106,10 +122,10 @@ service firebase.storage {
           <div className="bg-emerald-50/70 border border-emerald-200/80 rounded-2xl p-3.5">
             <h4 className="font-bold text-emerald-950 flex items-center gap-1.5 mb-1">
               <ShieldCheck className="w-4 h-4 text-emerald-700" />
-              資料庫安全設計：徹底杜絕順藤摸瓜（Anti-Scraping）
+              手機與跨裝置同步模式選擇
             </h4>
             <p className="text-stone-600 text-[11px] leading-normal">
-              下方規則強制關閉了 <code className="text-rose-800 font-mono font-bold">allow list: if false</code>。這意味著<b>任何外部人員或網路爬蟲，都絕對無法掃描您的資料庫清單</b>！訪客只能透過您分享的高熵加密 Token 精準開啟被授權的那一本，完全看不到其他任何冊子或學生資料。
+              請根據您的使用習慣選擇規則。推薦使用<b>「方案 A：全自動即時同步」</b>，電腦建立的新冊或上傳的考卷，手機打開首頁即可隨時管理翻閱！
             </p>
           </div>
 
@@ -118,7 +134,7 @@ service firebase.storage {
             <div className="flex items-center justify-between">
               <h4 className="font-bold text-stone-900 flex items-center gap-1.5 text-xs">
                 <Sparkles className="w-3.5 h-3.5 text-amber-600" />
-                步驟 1：發布 Firestore 資料庫規則（防順藤摸瓜）
+                步驟 1：發布 Firestore 資料庫規則
               </h4>
               <a
                 href="https://console.firebase.google.com/project/my-tools-hub-1fdb1/firestore/rules"
@@ -131,8 +147,34 @@ service firebase.storage {
               </a>
             </div>
 
+            {/* 方案切換 Tabs */}
+            <div className="flex items-center gap-1 bg-stone-200/80 p-1 rounded-xl">
+              <button
+                type="button"
+                onClick={() => setRuleTab('sync')}
+                className={`flex-1 py-1.5 px-2 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
+                  ruleTab === 'sync'
+                    ? 'bg-white text-stone-900 shadow-2xs'
+                    : 'text-stone-600 hover:text-stone-900'
+                }`}
+              >
+                📱 方案 A：手機電腦全同步（推薦）
+              </button>
+              <button
+                type="button"
+                onClick={() => setRuleTab('private')}
+                className={`flex-1 py-1.5 px-2 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
+                  ruleTab === 'private'
+                    ? 'bg-white text-stone-900 shadow-2xs'
+                    : 'text-stone-600 hover:text-stone-900'
+                }`}
+              >
+                🔒 方案 B：純分享連結才可見
+              </button>
+            </div>
+
             <div className="bg-stone-900 text-stone-200 p-3 rounded-xl relative font-mono text-[10.5px]">
-              <pre className="overflow-x-auto max-h-36">{firestoreRule}</pre>
+              <pre className="overflow-x-auto max-h-36">{currentRule}</pre>
               <button
                 type="button"
                 onClick={copyFirestore}

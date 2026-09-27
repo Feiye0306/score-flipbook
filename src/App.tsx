@@ -6,7 +6,8 @@ import {
   removeStudentFolder,
   getLocalBooks,
   subscribeSingleBook,
-  fetchSingleBook
+  fetchSingleBook,
+  fetchBookByShareCodeOrId
 } from './services/dbService';
 import { verifyAccessToken } from './services/tokenService';
 import type { ExamBook } from './types';
@@ -96,6 +97,18 @@ export const App: React.FC = () => {
     if (shareParam) {
       setIsSingleBookMode(true);
       setActiveTab('book'); // 訪客從特定分享連結進入直接看該冊
+
+      // 立即透過雲端查找該分享碼或 ID (手機跨裝置秒級加載)
+      fetchBookByShareCodeOrId(shareParam).then((found) => {
+        if (found) {
+          setCurrentBookId(found.id);
+          setBooks((prev) => [found, ...prev.filter((b) => b.id !== found.id)]);
+          // 啟動單冊即時監聽
+          subscribeSingleBook(found.id, (updated) => {
+            setBooks((prev) => [updated, ...prev.filter((b) => b.id !== updated.id)]);
+          });
+        }
+      });
     }
 
     const unsubscribe = subscribeBooks((loadedBooks) => {

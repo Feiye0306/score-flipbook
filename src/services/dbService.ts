@@ -4,7 +4,10 @@ import {
   deleteDoc,
   onSnapshot,
   getDoc,
+  getDocs,
   collection,
+  query,
+  where,
 } from 'firebase/firestore';
 import { db, isFirebaseConfigured } from '../config/firebase';
 import type { ExamBook, ScoreImage, StudentFolder } from '../types';
@@ -65,7 +68,7 @@ export function saveLocalBooks(books: Record<string, ExamBook>): void {
 }
 
 /**
- * 精準讀取單一冊子 (抗順藤摸瓜：不遍歷全庫，僅單點讀取)
+ * 精準讀取單一冊子 (支援 members 子集合圖片合併載入)
  */
 export async function fetchSingleBook(bookId: string): Promise<ExamBook | null> {
   // 1. 先查本地
@@ -80,6 +83,23 @@ export async function fetchSingleBook(bookId: string): Promise<ExamBook | null> 
       const snapshot = await getDoc(docRef);
       if (snapshot.exists()) {
         const cloudBook = snapshot.data() as ExamBook;
+
+        // 同步載入 members 子集合，確保圖片不遺漏
+        try {
+          const membersCol = collection(firestoreDb, COLLECTION_NAME, bookId, 'members');
+          const membersSnap = await getDocs(membersCol);
+          const studentsMap: Record<string, StudentFolder> = { ...(cloudBook.students || {}) };
+          membersSnap.forEach((mDoc) => {
+            if (mDoc.exists()) {
+              const folder = mDoc.data() as StudentFolder;
+              studentsMap[folder.studentName] = folder;
+            }
+          });
+          cloudBook.students = studentsMap;
+        } catch (mErr) {
+          console.warn('載入 members 子集合警訊：', mErr);
+        }
+
         // 同步存入本地
         localMap[bookId] = cloudBook;
         saveLocalBooks(localMap);
@@ -95,12 +115,50 @@ export async function fetchSingleBook(bookId: string): Promise<ExamBook | null> 
 }
 
 /**
- * 監聽指定冊子清單 (精確抗爬蟲模式：對每個已註冊 ID 獨立監聽，絕不請求全集合 list)
+ * 依據 shareCode 或 bookId 跨裝置查找單冊 (手機打開分享連結秒級加載)
+ */
+export async function fetchBookByShareCodeOrId(shareOrId: string): Promise<ExamBook | null> {
+  const cleanKey = shareOrId.trim();
+  if (!cleanKey) return null;
+
+  // 1. 先查本地快取
+  const localMap = getLocalBooks();
+  if (localMap[cleanKey]) return localMap[cleanKey];
+  const matchedLocal = Object.values(localMap).find(
+    (b) => b.shareCode === cleanKey || b.id === cleanKey
+  );
+  if (matchedLocal) return matchedLocal;
+
+  // 2. 查雲端：先直接以 docId 查詢
+  const byId = await fetchSingleBook(cleanKey);
+  if (byId) return byId;
+
+  // 3. 查雲端：若不是 docId，以 shareCode 查詢
+  if (isFirebaseConfigured && db) {
+    try {
+      const q = query(collection(db, COLLECTION_NAME), where('shareCode', '==', cleanKey));
+      const qSnap = await getDocs(q);
+      if (!qSnap.empty) {
+        const foundDoc = qSnap.docs[0];
+        return await fetchSingleBook(foundDoc.id);
+      }
+    } catch (err: any) {
+      console.warn('透過 shareCode 查詢雲端冊子失敗：', err.message);
+    }
+  }
+
+  return null;
+}
+
+/**
+ * 監聽冊子清單 (雲端優先全域同步 + 本地秒開 + 降級防護)
+ * 手機直接打開首頁即可自動拉取電腦建立的所有書冊！
  */
 export function subscribeBooks(
   onUpdate: (books: ExamBook[]) => void,
   onPermissionWarning?: () => void
 ): () => void {
+  // 1. 立即以本地快取資料開屏，秒開不等待
   const emitLocal = () => {
     const local = Object.values(getLocalBooks()).sort(
       (a, b) => (b.updatedAt || 0) - (a.updatedAt || 0)
@@ -115,47 +173,139 @@ export function subscribeBooks(
   }
 
   const firestoreDb = db;
-  const localMap = getLocalBooks();
-  // 註冊本機現有所有冊子 ID
-  Object.keys(localMap).forEach((id) => registerBookId(id));
-  const bookIds = getRegisteredBookIds();
+  const memberUnsubscribes: Record<string, () => void> = {};
 
-  const unsubscribes: Array<() => void> = [];
-
-  // 針對使用者擁有的每一本冊子發起精確監聽（完全不需要 list 權限，徹底防順藤摸瓜）
-  bookIds.forEach((bookId) => {
+  // 輔助函式：即時監聽成員圖片子集合
+  const attachMembersListener = (bookId: string) => {
+    if (memberUnsubscribes[bookId]) return;
     try {
-      const docRef = doc(firestoreDb, COLLECTION_NAME, bookId);
+      const membersCol = collection(firestoreDb, COLLECTION_NAME, bookId, 'members');
       const unsub = onSnapshot(
-        docRef,
-        (snap) => {
-          if (snap.exists()) {
-            isCloudPermissionDenied = false;
-            const updated = snap.data() as ExamBook;
-            const currentLocal = getLocalBooks();
-            currentLocal[updated.id] = updated;
-            saveLocalBooks(currentLocal);
-
-            const sorted = Object.values(currentLocal).sort(
+        membersCol,
+        (colSnap) => {
+          const current = getLocalBooks();
+          if (!current[bookId]) return;
+          const studentsMap = { ...(current[bookId].students || {}) };
+          let changed = false;
+          colSnap.forEach((mSnap) => {
+            if (mSnap.exists()) {
+              const folder = mSnap.data() as StudentFolder;
+              studentsMap[folder.studentName] = folder;
+              changed = true;
+            }
+          });
+          if (changed) {
+            current[bookId].students = studentsMap;
+            saveLocalBooks(current);
+            const sorted = Object.values(current).sort(
               (a, b) => (b.updatedAt || 0) - (a.updatedAt || 0)
             );
             onUpdate(sorted);
           }
         },
-        (err) => {
-          console.warn(`精準監聽冊子 [${bookId}] 受阻：`, err.message);
-          isCloudPermissionDenied = true;
-          if (onPermissionWarning) onPermissionWarning();
-        }
+        () => {}
       );
-      unsubscribes.push(unsub);
-    } catch (err) {
-      console.warn('監聽例外：', err);
+      memberUnsubscribes[bookId] = unsub;
+    } catch {
+      // 靜默處理
     }
-  });
+  };
+
+  // 降級方案：逐一精準監聽本地已知的冊子
+  const fallbackUnsubs: Array<() => void> = [];
+  const startFallback = () => {
+    const localMap = getLocalBooks();
+    Object.keys(localMap).forEach((id) => registerBookId(id));
+    const bookIds = getRegisteredBookIds();
+
+    bookIds.forEach((bookId) => {
+      try {
+        const docRef = doc(firestoreDb, COLLECTION_NAME, bookId);
+        const unsub = onSnapshot(
+          docRef,
+          (snap) => {
+            if (snap.exists()) {
+              isCloudPermissionDenied = false;
+              const updated = snap.data() as ExamBook;
+              const currentLocal = getLocalBooks();
+              currentLocal[updated.id] = {
+                ...(currentLocal[updated.id] || {}),
+                ...updated,
+                students: {
+                  ...(currentLocal[updated.id]?.students || {}),
+                  ...(updated.students || {}),
+                },
+              };
+              saveLocalBooks(currentLocal);
+              attachMembersListener(updated.id);
+
+              const sorted = Object.values(currentLocal).sort(
+                (a, b) => (b.updatedAt || 0) - (a.updatedAt || 0)
+              );
+              onUpdate(sorted);
+            }
+          },
+          (err) => {
+            console.warn(`精準監聽冊子 [${bookId}] 受阻：`, err.message);
+            isCloudPermissionDenied = true;
+            if (onPermissionWarning) onPermissionWarning();
+          }
+        );
+        fallbackUnsubs.push(unsub);
+        attachMembersListener(bookId);
+      } catch (err) {
+        console.warn('監聽例外：', err);
+      }
+    });
+  };
+
+  // 首選方案：全集合即時監聽（手機與電腦跨裝置秒級自動同步）
+  let unsubCollection: (() => void) | null = null;
+  try {
+    const colRef = collection(firestoreDb, COLLECTION_NAME);
+    unsubCollection = onSnapshot(
+      colRef,
+      (snap) => {
+        isCloudPermissionDenied = false;
+        const currentLocal = getLocalBooks();
+        snap.forEach((docSnap) => {
+          if (docSnap.exists()) {
+            const cloudBook = docSnap.data() as ExamBook;
+            registerBookId(cloudBook.id);
+            currentLocal[cloudBook.id] = {
+              ...(currentLocal[cloudBook.id] || {}),
+              ...cloudBook,
+              students: {
+                ...(currentLocal[cloudBook.id]?.students || {}),
+                ...(cloudBook.students || {}),
+              },
+            };
+            attachMembersListener(cloudBook.id);
+          }
+        });
+
+        saveLocalBooks(currentLocal);
+        const sorted = Object.values(currentLocal).sort(
+          (a, b) => (b.updatedAt || 0) - (a.updatedAt || 0)
+        );
+        onUpdate(sorted);
+      },
+      (err) => {
+        console.warn('全集合即時監聽受阻（可能設有防爬蟲安全規則），切換為已註冊清單監聽：', err.message);
+        isCloudPermissionDenied = true;
+        if (onPermissionWarning) onPermissionWarning();
+        startFallback();
+      }
+    );
+  } catch (err) {
+    console.warn('全集合監聽初始化例外，切換至降級模式：', err);
+    startFallback();
+  }
 
   return () => {
-    unsubscribes.forEach((unsub) => unsub());
+    if (unsubCollection) unsubCollection();
+    fallbackUnsubs.forEach((u) => u());
+    Object.values(memberUnsubscribes).forEach((u) => u());
   };
 }
 
